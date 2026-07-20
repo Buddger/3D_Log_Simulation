@@ -17,54 +17,99 @@ const C = {
 };
 const MAT_COLORS = [0x4f8ef7, 0x34d399, 0xf59e0b, 0xef4444, 0xc084fc, 0x22d3ee, 0x94a3b8];
 
+const BUCKETS = {
+  AMB_VIE: { id: "BKT-VIE-ROAD-AMBIENT", source: "Oberhausen", destination: "Vienna", departure: "CW31 · Tue", mode: "Road", temperature: "Ambient", color: "#60a5fa" },
+  COOL_VIE: { id: "BKT-VIE-ROAD-COOL", source: "Oberhausen", destination: "Vienna", departure: "CW31 · Tue", mode: "Road", temperature: "2–8 °C", color: "#22d3ee" },
+  AIR_PAR: { id: "BKT-PAR-AIR-AMBIENT", source: "Nuremberg", destination: "Paris", departure: "CW31 · Wed", mode: "Air", temperature: "Ambient", color: "#c084fc" },
+  AMB_ZRH: { id: "BKT-ZRH-ROAD-AMBIENT", source: "Oberhausen", destination: "Zurich", departure: "CW31 · Thu", mode: "Road", temperature: "Ambient", color: "#34d399" },
+  LONG_PAR: { id: "BKT-PAR-ROAD-LONG", source: "Nuremberg", destination: "Paris", departure: "CW31 · Wed", mode: "Road", temperature: "Ambient", special: "Long goods", color: "#fbbf24" },
+};
+
 const DEMANDS = [
-  { id: "D-01", mat: "M-1001 Standard Cartoned Goods", short: "M-1001", qty: 1250, lane: "Oberhausen → Vienna", bucket: "CW31 · Tue", mode: "Road", temp: "Ambient", special: "—", color: 0, valid: true },
-  { id: "D-02", mat: "M-2002 Pharma Coolpacks", short: "M-2002", qty: 620, lane: "Oberhausen → Vienna", bucket: "CW31 · Tue", mode: "Road", temp: "2–8 °C", special: "Temperature-controlled", color: 5, valid: true },
-  { id: "D-03", mat: "M-3003 Precision Sensors", short: "M-3003", qty: 340, lane: "Nuremberg → Paris", bucket: "CW31 · Wed", mode: "Air", temp: "Ambient", special: "Air-freight mandatory", color: 4, valid: true },
-  { id: "D-04", mat: "M-4004 Steel Fittings", short: "M-4004", qty: 900, lane: "Oberhausen → Zurich", bucket: "CW31 · Thu", mode: "Road", temp: "Ambient", special: "Heavy · 620 kg/pallet", color: 3, valid: true },
-  { id: "D-05", mat: "M-5005 Panel Elements", short: "M-5005", qty: 260, lane: "Oberhausen → Zurich", bucket: "CW31 · Thu", mode: "Road", temp: "Ambient", special: "Overhanging (120 mm)", color: 1, valid: true },
-  { id: "D-06", mat: "M-6006 Aluminium Profiles 4.2 m", short: "M-6006", qty: 180, lane: "Nuremberg → Paris", bucket: "CW31 · Wed", mode: "Road", temp: "Ambient", special: "Long goods", color: 2, valid: true },
-  { id: "D-07", mat: "M-7007 Spare Kits", short: "M-7007", qty: 95, lane: "Oberhausen → Vienna", bucket: "CW31 · Tue", mode: "Road", temp: "Ambient", special: "—", color: 6, valid: false, issue: "Missing layer UOM · missing material height · missing stackability indicator" },
+  { id:"D-01", mat:"M-1001 Standard Cartoned Goods", short:"M-1001", qty:1250, bucketId:BUCKETS.AMB_VIE.id, lane:"Oberhausen → Vienna", bucket:"CW31 · Tue", mode:"Road", temp:"Ambient", special:"—", color:0, valid:true,
+    fullPalletQty:480, layerQty:96, cartonQty:24, packQty:1, unitVolume:0.0048, unitWeight:1.8, materialLength:0.40, materialWidth:0.30, materialHeight:0.20, stackable:true, maxTopLoad:420, overhang:0, temperatureCompatibility:["Ambient"], assignedLane:"OBH-VIE-RD", allowedTUTypes:["Small Box Truck","Standard Trailer","High-Cube Trailer"] },
+  { id:"D-02", mat:"M-2002 Pharma Coolpacks", short:"M-2002", qty:620, bucketId:BUCKETS.COOL_VIE.id, lane:"Oberhausen → Vienna", bucket:"CW31 · Tue", mode:"Road", temp:"2–8 °C", special:"Temperature-controlled", color:5, valid:true,
+    fullPalletQty:240, layerQty:48, cartonQty:12, packQty:1, unitVolume:0.0062, unitWeight:1.3, materialLength:0.38, materialWidth:0.28, materialHeight:0.22, stackable:true, maxTopLoad:300, overhang:0, temperatureCompatibility:["2–8 °C"], assignedLane:"OBH-VIE-COOL", allowedTUTypes:["Temperature-Controlled Box Truck","Temperature-Controlled Trailer"] },
+  { id:"D-03", mat:"M-3003 Precision Sensors", short:"M-3003", qty:340, bucketId:BUCKETS.AIR_PAR.id, lane:"Nuremberg → Paris", bucket:"CW31 · Wed", mode:"Air", temp:"Ambient", special:"Air-freight mandatory", color:4, valid:true,
+    fullPalletQty:160, layerQty:40, cartonQty:10, packQty:1, unitVolume:0.0032, unitWeight:0.9, materialLength:0.32, materialWidth:0.24, materialHeight:0.16, stackable:false, maxTopLoad:0, overhang:0, temperatureCompatibility:["Ambient"], assignedLane:"NUE-PAR-AIR", allowedTUTypes:["Air-Freight Unit","Air-Freight ULD"] },
+  { id:"D-04", mat:"M-4004 Steel Fittings", short:"M-4004", qty:900, bucketId:BUCKETS.AMB_ZRH.id, lane:"Oberhausen → Zurich", bucket:"CW31 · Thu", mode:"Road", temp:"Ambient", special:"Heavy", color:3, valid:true,
+    fullPalletQty:450, layerQty:90, cartonQty:15, packQty:1, unitVolume:0.0025, unitWeight:2.75, materialLength:0.35, materialWidth:0.28, materialHeight:0.18, stackable:false, maxTopLoad:0, overhang:0, temperatureCompatibility:["Ambient"], assignedLane:"OBH-ZRH-RD", allowedTUTypes:["Standard Trailer","High-Cube Trailer"] },
+  { id:"D-05", mat:"M-5005 Panel Elements", short:"M-5005", qty:260, bucketId:BUCKETS.AMB_ZRH.id, lane:"Oberhausen → Zurich", bucket:"CW31 · Thu", mode:"Road", temp:"Ambient", special:"Overhanging", color:1, valid:true,
+    fullPalletQty:200, layerQty:40, cartonQty:10, packQty:1, unitVolume:0.012, unitWeight:4.2, materialLength:1.30, materialWidth:0.95, materialHeight:0.09, stackable:false, maxTopLoad:0, overhang:0.12, temperatureCompatibility:["Ambient"], assignedLane:"OBH-ZRH-RD", allowedTUTypes:["Standard Trailer","High-Cube Trailer"] },
+  { id:"D-06", mat:"M-6006 Aluminium Profiles 4.2 m", short:"M-6006", qty:180, bucketId:BUCKETS.LONG_PAR.id, lane:"Nuremberg → Paris", bucket:"CW31 · Wed", mode:"Road", temp:"Ambient", special:"Long goods", color:2, valid:true,
+    fullPalletQty:90, layerQty:30, cartonQty:0, packQty:1, unitVolume:0.018, unitWeight:3.1, materialLength:4.20, materialWidth:0.10, materialHeight:0.10, stackable:false, maxTopLoad:0, overhang:2.40, temperatureCompatibility:["Ambient"], assignedLane:"NUE-PAR-LONG", allowedTUTypes:["Long-Goods Trailer","Extended-Length Trailer"] },
+  { id:"D-07", mat:"M-7007 Spare Kits", short:"M-7007", qty:95, bucketId:BUCKETS.AMB_VIE.id, lane:"Oberhausen → Vienna", bucket:"CW31 · Tue", mode:"Road", temp:"Ambient", special:"—", color:6, valid:false,
+    fullPalletQty:120, layerQty:null, cartonQty:8, packQty:1, unitVolume:0.005, unitWeight:1.1, materialLength:0.30, materialWidth:0.25, materialHeight:null, stackable:null, maxTopLoad:null, overhang:0, temperatureCompatibility:["Ambient"], assignedLane:null, allowedTUTypes:[], issue:"Missing layer UOM · missing material height · missing stackability indicator · missing TU assignment" },
 ];
 
 const PHASES = [
-  { n: 1, name: "Normalized Demand", zone: "Forecast Input", cam: [-62, 15, 24], tgt: [-62, 2.5, 0],
-    info: "Forecast demand is grouped into compatible planning buckets before packaging and transport-capacity calculation begins — by source, destination, departure bucket, material, transport-unit mode, temperature requirement and special-goods characteristics." },
-  { n: 2, name: "Master Data Validation", zone: "Validation Gate", cam: [-45, 14, 23], tgt: [-45, 3, 0],
-    info: "The heuristic requires complete master data before quantities can be converted into logistics building blocks: units of measure (EPF/UPF, EPL/UPL, CAR, PAC), handling-unit type, lane & TU assignment, dimensions, weight, temperature requirement, stackability, overhang and long-goods rules." },
-  { n: 3, name: "Quantity Decomposition", zone: "Decomposition", cam: [-26, 16, 26], tgt: [-26, 2, 0],
-    info: "Each demand quantity is split in strict sequence: full homogeneous pallets (EPF/UPF) → homogeneous layers (EPL/UPL) → cartons (CAR) → loose sales packs (PAC). The remaining quantity shrinks after every step." },
-  { n: 4, name: "Building Mixed Layer Pallets (MPL)", zone: "MPL Builder", cam: [-8, 12, 20], tgt: [-8, 3, 0],
-    info: "MPL represents a mixed pallet built from complete homogeneous material layers. Layers are sorted (overhang ↓, length ↓, width ↓, weight ↓) and added to an existing MPL only when source, destination, bucket, TU mode, temperature, overhang, height and weight are compatible — otherwise a new MPL is created." },
-  { n: 5, name: "Building MPM Mixed Pallets", zone: "MPM Builder", cam: [7, 12, 20], tgt: [7, 3, 0],
-    info: "MPM represents a mixed pallet built from cartons and loose goods using a volume-based height estimation: sum item volume → apply DispersionFactorMP → convert to theoretical height → apply MinimumHeightLayerLL → check MaxMPHeight & MaxMPWeight → split into additional pallets when a limit is exceeded." },
-  { n: 6, name: "Long-Goods Handling", zone: "Long-Goods Lane", cam: [-2, 13, 38], tgt: [-2, 2, 17],
-    info: "Long goods follow dedicated palletization and loading rules because they do not fit standard pallet footprints. They are grouped by length, width, weight, destination, bucket and mode. Overlong pallets (type MPG) are treated as non-stackable and require dedicated transport-unit compatibility." },
-  { n: 7, name: "Pallet Stacking", zone: "Stack Builder", cam: [23, 13, 22], tgt: [23, 3, 0],
-    info: "Pallets are converted into transport-ready stacks based on physical and operational compatibility: max stack height & weight, max weight on first pallet, load-bearing capacity, stackability indicator, goods-allowed-on-top, TU inner height, width compatibility, loading margin. Air freight: one pallet = one stack." },
-  { n: 8, name: "Transport-Unit Selection", zone: "TU Selection", cam: [40, 14, 25], tgt: [40, 3, 0],
-    info: "The algorithm walks the lane-specific TU priority list starting with the lowest sequence and checks: TU mode, temperature, inner length/width/height, volume & weight capacity, lane max weight, loading margin, stack footprint, long-goods and air-freight compatibility. Incompatible units are rejected until a match is found." },
-  { n: 9, name: "Loading & Capacity Result", zone: "Loading / Result", cam: [58, 16, 27], tgt: [58, 3, 0],
-    info: "Stacks are loaded onto visible floor positions inside semi-transparent transport units. When a unit reaches a floor-space, volume or weight constraint, it is closed and an additional unit is created. The result shows utilization, warnings and full planning transparency." },
+  { n:1, name:"Normalized Demand", zone:"Forecast Input", cam:[-62,15,24], tgt:[-62,2.5,0], info:"Demand is separated into strict planning buckets. Source, destination, departure, TU mode, temperature and special transport characteristics remain attached to every object." },
+  { n:2, name:"Master Data Validation", zone:"Validation Gate", cam:[-45,14,23], tgt:[-45,3,0], info:"Illustrative logistics master data is validated before decomposition: UOM quantities, dimensions, weight, stackability, temperature rules, assigned lane and allowed TU types." },
+  { n:3, name:"Quantity Decomposition", zone:"Decomposition", cam:[-26,16,26], tgt:[-26,2,0], info:"Quantity is reconciled in strict sequence: full pallets → homogeneous layers → cartons → loose packs. Remaining quantity is displayed after every step." },
+  { n:4, name:"Building Mixed Layer Pallets (MPL)", zone:"MPL Builder", cam:[-8,12,20], tgt:[-8,3,0], info:"MPL uses complete homogeneous layers only. Ambient and 2–8 °C layers remain on separate pallets because no cross-temperature compatibility rule is defined." },
+  { n:5, name:"Building MPM Mixed Pallets", zone:"MPM Builder", cam:[7,12,20], tgt:[7,3,0], info:"MPM uses cartons and loose packs within one compatible planning bucket. Cross-destination, cross-mode, cross-departure and cross-temperature consolidation is rejected visibly." },
+  { n:6, name:"Long-Goods Handling", zone:"Long-Goods Lane", cam:[-2,13,38], tgt:[-2,2,17], info:"Long goods retain BKT-PAR-ROAD-LONG and are routed to dedicated MPG carriers and long-goods TU types." },
+  { n:7, name:"Pallet Stacking", zone:"Stack Builder", cam:[23,13,22], tgt:[23,3,0], info:"Stacks retain bucket identity. Air freight remains one pallet per stack; overhang, heavy and long-goods pallets remain non-stackable." },
+  { n:8, name:"Transport-Unit Selection", zone:"TU Selection", cam:[40,14,25], tgt:[40,3,0], info:"Each bucket evaluates its own lane-specific priority list in sequence. Rejections show concrete capacity, dimensional, temperature or mode calculations." },
+  { n:9, name:"Loading & Capacity Result", zone:"Loading / Result", cam:[60,16,30], tgt:[60,3,0], info:"Stacks are loaded into separated transport units using trailer-relative floor positions. Dashboard KPIs are calculated from the same central scenario structure." },
 ];
 
-const SUMMARY = {
-  forecastQty: 3645, materials: 7, fullPallets: 6, layers: 7, cartons: 11, loosePacks: 15,
-  mpl: 2, mpm: 3, mpg: 2, totalPallets: 13, totalStacks: 10, totalTUs: 3,
-  volUtil: 71, weightUtil: 55, floorUtil: 74, warnings: 4, mdIssues: 1,
-  tus: [
-    { id: "TU 1", type: "Standard Trailer", stacks: 5, pallets: 8, floor: 92, vol: 84, weight: 61, status: "Fully planned — closed on floor-space limit", color: C.cyan },
-    { id: "TU 2", type: "Temperature-Controlled Trailer", stacks: 2, pallets: 3, floor: 54, vol: 47, weight: 43, status: "Temperature-controlled load", color: C.blue },
-    { id: "TU 3", type: "Long-Goods Trailer", stacks: 2, pallets: 2, floor: 48, vol: 39, weight: 35, status: "Dedicated long-goods unit", color: C.amber },
+function decompose(d) {
+  if (!d.valid) return { demand:d, fullPallets:0, fullPalletUnits:0, layers:0, layerUnits:0, cartons:0, cartonUnits:0, loosePacks:0, remainingSteps:[d.qty] };
+  let remaining=d.qty;
+  const fullPallets=d.fullPalletQty ? Math.floor(remaining/d.fullPalletQty) : 0; const fullPalletUnits=fullPallets*(d.fullPalletQty||0); remaining-=fullPalletUnits;
+  const afterPallets=remaining;
+  const layers=d.layerQty ? Math.floor(remaining/d.layerQty) : 0; const layerUnits=layers*(d.layerQty||0); remaining-=layerUnits;
+  const afterLayers=remaining;
+  const cartons=d.cartonQty ? Math.floor(remaining/d.cartonQty) : 0; const cartonUnits=cartons*(d.cartonQty||0); remaining-=cartonUnits;
+  const afterCartons=remaining;
+  const loosePacks=d.packQty ? Math.floor(remaining/d.packQty) : remaining;
+  return { demand:d, fullPallets, fullPalletUnits, layers, layerUnits, cartons, cartonUnits, loosePacks, remainingSteps:[d.qty,afterPallets,afterLayers,afterCartons,0] };
+}
+const DECOMPOSITIONS=DEMANDS.map(decompose);
+const validDecomp=DECOMPOSITIONS.filter(x=>x.demand.valid);
+const sum=(key)=>validDecomp.reduce((a,x)=>a+(x[key]||0),0);
+
+const PALLET_PLAN = {
+  mpl:[
+    {id:"MPL-01",bucketId:BUCKETS.AMB_VIE.id,materials:"M-1001 · 3 ambient layers",layers:3,height:1.30,weight:285,temp:"Ambient"},
+    {id:"MPL-02",bucketId:BUCKETS.COOL_VIE.id,materials:"M-2002 · 2 temperature-controlled layers",layers:2,height:1.10,weight:230,temp:"2–8 °C"},
   ],
-  insights: [
-    "Full-pallet conversion reduced mixed-pallet demand: 2,780 of 3,645 units left the flow as homogeneous full pallets.",
-    "One additional MPL pallet was created due to overhang incompatibility of M-5005 layers.",
-    "Loose-item volume exceeded MaxMPWeight once — the MPM builder split the load into two mixed pallets.",
-    "One temperature-controlled TU was required for the Oberhausen → Vienna pharma demand.",
-    "Long goods (M-6006) could not be combined with standard pallet stacks and triggered a dedicated MPG trailer.",
-    "TU 1 was closed by floor-space utilization (92%), not by weight (61%).",
-    "One demand record (D-07) requires master-data correction before it can be planned.",
+  mpm:[
+    {id:"MPM-01",bucketId:BUCKETS.AMB_VIE.id,materials:"M-1001 · 2 loose packs",height:0.55,weight:28,temp:"Ambient"},
+    {id:"MPM-02",bucketId:BUCKETS.COOL_VIE.id,materials:"M-2002 cartons / loose packs",height:1.30,weight:245,temp:"2–8 °C"},
+    {id:"MPM-03",bucketId:BUCKETS.AIR_PAR.id,materials:"M-3003 cartons / loose packs",height:1.15,weight:180,temp:"Ambient · Air"},
+  ],
+  mpg:[
+    {id:"MPG-01",bucketId:BUCKETS.LONG_PAR.id,materials:"M-6006 long goods",height:0.55,weight:279},
+    {id:"MPG-02",bucketId:BUCKETS.LONG_PAR.id,materials:"M-6006 long goods",height:0.55,weight:279},
+  ],
+};
+
+const TU_RESULTS=[
+  {id:"TU 1",bucketId:BUCKETS.AMB_VIE.id,type:"Standard Trailer",stacks:2,pallets:3,floor:58,vol:46,weight:39,status:"Selected after Small Box Truck capacity rejection",color:C.cyan},
+  {id:"TU 2",bucketId:BUCKETS.COOL_VIE.id,type:"Temperature-Controlled Box Truck",stacks:2,pallets:3,floor:64,vol:58,weight:51,status:"Selected · 2–8 °C capable",color:C.blue},
+  {id:"TU 3",bucketId:BUCKETS.AIR_PAR.id,type:"Air-Freight Unit",stacks:2,pallets:2,floor:52,vol:43,weight:31,status:"Selected · Air mode mandatory",color:C.purple},
+  {id:"TU 4",bucketId:BUCKETS.AMB_ZRH.id,type:"Standard Trailer",stacks:3,pallets:4,floor:76,vol:61,weight:68,status:"Selected · heavy and overhang positions separated",color:C.green},
+  {id:"TU 5",bucketId:BUCKETS.LONG_PAR.id,type:"Long-Goods Trailer",stacks:2,pallets:2,floor:48,vol:39,weight:35,status:"Selected · 4.2 m material length",color:C.amber},
+];
+const avg=(k)=>Math.round(TU_RESULTS.reduce((a,t)=>a+t[k],0)/TU_RESULTS.length);
+const SUMMARY={
+  forecastQty:DEMANDS.reduce((a,d)=>a+d.qty,0), materials:DEMANDS.length,
+  fullPalletQty:sum("fullPalletUnits"), fullPallets:sum("fullPallets"), layers:sum("layers"), cartons:sum("cartons"), loosePacks:sum("loosePacks"),
+  mpl:PALLET_PLAN.mpl.length, mpm:PALLET_PLAN.mpm.length, mpg:PALLET_PLAN.mpg.length,
+  totalPallets:sum("fullPallets")+PALLET_PLAN.mpl.length+PALLET_PLAN.mpm.length+PALLET_PLAN.mpg.length,
+  totalStacks:TU_RESULTS.reduce((a,t)=>a+t.stacks,0), totalTUs:TU_RESULTS.length,
+  volUtil:avg("vol"), weightUtil:avg("weight"), floorUtil:avg("floor"), warnings:5, mdIssues:DEMANDS.filter(d=>!d.valid).length,
+  tus:TU_RESULTS,
+  insights:[
+    `${sum("fullPalletUnits").toLocaleString()} of ${DEMANDS.reduce((a,d)=>a+d.qty,0).toLocaleString()} forecast units are assigned to homogeneous full pallets.`,
+    "M-1001 reconciles exactly: 1,250 → 960 full-pallet units → 288 layer units → 0 carton units → 2 loose packs.",
+    "Ambient and 2–8 °C Vienna flows remain in separate MPL, MPM and TU objects.",
+    "Air-freight M-3003 remains in BKT-PAR-AIR-AMBIENT from decomposition through TU loading.",
+    "Long goods M-6006 remain in BKT-PAR-ROAD-LONG and require a dedicated long-goods trailer.",
+    "All KPI values are derived from the central illustrative scenario data used by the 3D scene.",
+    "D-07 remains blocked because required master data and TU assignment are incomplete.",
   ],
 };
 
@@ -224,6 +269,26 @@ function floorArrow(x, z) {
   return m;
 }
 
+function disposeObject3D(root) {
+  if (!root) return;
+  root.traverse((obj) => {
+    if (obj.geometry) obj.geometry.dispose?.();
+    const materials = Array.isArray(obj.material) ? obj.material : obj.material ? [obj.material] : [];
+    materials.forEach((material) => {
+      ["map","alphaMap","aoMap","bumpMap","normalMap","roughnessMap","metalnessMap","emissiveMap"].forEach((key) => material[key]?.dispose?.());
+      material.dispose?.();
+    });
+  });
+}
+function clearGroup(group) {
+  if (!group) return;
+  while (group.children.length > 0) {
+    const child = group.children[0];
+    group.remove(child);
+    disposeObject3D(child);
+  }
+}
+
 /* ============================ component ============================ */
 export default function ForecastToTransportSim() {
   const mountRef = useRef(null);
@@ -236,6 +301,19 @@ export default function ForecastToTransportSim() {
   const autoCamRef = useRef(true);
   const timerRef = useRef(0);
   const logSeq = useRef(0);
+  const timeoutIdsRef = useRef([]);
+  const schedule = useCallback((fn, ms) => {
+    const id = window.setTimeout(() => {
+      timeoutIdsRef.current = timeoutIdsRef.current.filter((x) => x !== id);
+      fn();
+    }, ms);
+    timeoutIdsRef.current.push(id);
+    return id;
+  }, []);
+  const clearScheduled = useCallback(() => {
+    timeoutIdsRef.current.forEach((id) => window.clearTimeout(id));
+    timeoutIdsRef.current = [];
+  }, []);
 
   const [started, setStarted] = useState(false);
   const [phase, setPhase] = useState(-1);
@@ -299,7 +377,7 @@ export default function ForecastToTransportSim() {
         card.position.y = 1.6; g.add(card); g.add(edged(card, MAT_COLORS[d.color]));
         const stripe = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.28, 0.12), new THREE.MeshBasicMaterial({ color: MAT_COLORS[d.color] }));
         stripe.position.set(0, 2.3, 0); g.add(stripe);
-        const tag = makeLabel(d.id + " · " + d.short + " · " + d.qty + " u", { size: 30 });
+        const tag = makeLabel(d.id + " · " + d.short + " · " + d.qty + " u · " + d.bucketId, { size: 24 });
         tag.position.set(0, 0.55, 0.3); g.add(tag);
         const col = k % 4, row = Math.floor(k / 4);
         const x = -66 + col * 3.4, z = -3 + row * 4;
@@ -308,7 +386,7 @@ export default function ForecastToTransportSim() {
         t3.pulses.push(stripe);
       });
       lbl("Forecast Input — normalized demand buckets", -62, 6.5, -7, { size: 34, color: "#8ecbff" });
-      addLog("Forecast demand normalized: 7 records grouped into planning buckets (lane × bucket × material × mode × temp).");
+      if (!instant) addLog("Forecast demand normalized: 7 records grouped into planning buckets (lane × bucket × material × mode × temp).");
     }
 
     if (i === 1) {
@@ -355,89 +433,77 @@ export default function ForecastToTransportSim() {
       lbl("⚠ Missing TU assignment", -52.5, 3.9, -5.5, { size: 24, color: "#ffd97a" });
       lbl("⚠ Missing material height", -52.5, 3.2, -5.5, { size: 24, color: "#ffd97a" });
       lbl("⚠ Missing stackability indicator", -52.5, 2.5, -5.5, { size: 24, color: "#ffd97a" });
-      addLog("Master data validated: 6 of 7 records complete.", "ok");
-      addLog("D-07 routed to exception area — missing layer UOM, material height, stackability indicator.", "warn");
+      if (!instant) addLog("Master data validated: 6 of 7 records complete.", "ok");
+      if (!instant) addLog("D-07 routed to exception area — missing layer UOM, material height, stackability indicator.", "warn");
     }
 
     if (i === 2) {
-      // Phase 3: decomposition of M-1001 + outputs of other materials
-      lbl("Quantity Decomposition — EPF → EPL → CAR → PAC", -26, 7.4, -9, { size: 34, color: "#8ecbff" });
-      lbl("M-1001: 1,250 u → 2 full pallets (EPF 480) → 3 layers (EPL 96) → 4 cartons (CAR 24) → 6 loose packs", -26, 6.4, -9, { size: 24, color: "#9fd0ff" });
-      // row labels
-      lbl("Full Pallets · ExecutionCalcPallets", -33.5, 2.6, -6, { size: 24, color: "#9fd0ff" });
-      lbl("Homogeneous Layers · ExecutionCalcLayers", -33.6, 2.6, -2, { size: 24, color: "#9fd0ff" });
-      lbl("Cartons · ExecutionCalcItems", -33.0, 2.6, 2, { size: 24, color: "#9fd0ff" });
-      lbl("Loose Packs · ExecutionCalcItems", -33.1, 2.6, 6, { size: 24, color: "#9fd0ff" });
-      // full pallets row (z=-6)
-      const fps = [
-        { ci: 0, id: "FP-01", mat: "M-1001" }, { ci: 0, id: "FP-02", mat: "M-1001" },
-        { ci: 5, id: "FP-03", mat: "M-2002 · temp" }, { ci: 5, id: "FP-04", mat: "M-2002 · temp" },
-        { ci: 3, id: "FP-05", mat: "M-4004 · heavy" }, { ci: 3, id: "FP-06", mat: "M-4004 · heavy" },
+      lbl("Quantity Decomposition — strict bucket lanes", -26, 8.0, -9, { size: 34, color: "#8ecbff" });
+      lbl("Scenario-based heuristic simulation using illustrative master data", -26, 7.1, -9, { size: 22, color: "#ffd97a" });
+      const laneDefs=[
+        [BUCKETS.AMB_VIE,-34,-5],[BUCKETS.COOL_VIE,-28,-5],[BUCKETS.AIR_PAR,-22,-5],[BUCKETS.AMB_ZRH,-34,4],[BUCKETS.LONG_PAR,-25,4],
       ];
-      fps.forEach((f, k) => dropIn(fullPallet(f.ci), -30 + k * 3.0, 0, -6,
-        { kind: "Pallet", id: f.id, type: "Full Pallet (homogeneous)", materials: f.mat, layers: "n/a — full unit", height: "1.85 m", weight: f.ci === 3 ? "620 kg" : "310 kg", overhang: "No", temp: f.ci === 5 ? "2–8 °C" : "Ambient", stackable: f.ci === 3 ? "No (heavy)" : "Yes", output: "ExecutionCalcPallets" }, k * 0.12));
-      // layers row (z=-2)
-      const lys = [
-        { ci: 0 }, { ci: 0 }, { ci: 0 }, { ci: 5 }, { ci: 5 }, { ci: 1, o: true }, { ci: 1, o: true },
+      laneDefs.forEach(([b,x,z])=>{
+        const floor=new THREE.Mesh(new THREE.BoxGeometry(5.2,0.08,6.5),new THREE.MeshBasicMaterial({color:new THREE.Color(b.color),transparent:true,opacity:0.12}));
+        put(floor,x,0.04,z,{kind:"Planning bucket",...b});
+        lbl(b.id,x,0.35,z-2.6,{size:20,color:b.color});
+        lbl(`${b.source} → ${b.destination} · ${b.departure} · ${b.mode} · ${b.temperature}`,x,0.35,z-1.9,{size:16,color:"#cbd5e1"});
+      });
+      const m=DECOMPOSITIONS.find(x=>x.demand.short==="M-1001");
+      const steps=[
+        `Initial demand: ${m.demand.qty.toLocaleString()} units`,
+        `After full pallets: ${m.remainingSteps[1]} units remaining`,
+        `After homogeneous layers: ${m.remainingSteps[2]} units remaining`,
+        `After cartons: ${m.remainingSteps[3]} units remaining`,
+        `Final loose packs: ${m.loosePacks} units`,
       ];
-      lys.forEach((l, k) => dropIn(layerUnit(l.ci, l.o), -30 + k * 2.8, 0, -2,
-        { kind: "Layer", id: "LY-0" + (k + 1), type: "Homogeneous Layer", materials: l.ci === 0 ? "M-1001" : l.ci === 5 ? "M-2002 (temp)" : "M-5005 (overhang)", output: "ExecutionCalcLayers", note: "Waits for MPL processing" }, 0.3 + k * 0.1));
-      // cartons row (z=2)
-      for (let k = 0; k < 11; k++) {
-        const ci = [0, 0, 0, 0, 5, 5, 4, 4, 4, 1, 1][k];
-        dropIn(cartonBox(ci, 0.75), -30 + (k % 8) * 1.3, 0, 2 + Math.floor(k / 8) * 1.2,
-          { kind: "Carton", id: "CAR-" + (k + 1), type: "Carton / export box", output: "ExecutionCalcItems" }, 0.5 + k * 0.06);
+      steps.forEach((s,k)=>lbl(s,-34,5.9-k*0.65,-8.0,{size:21,color:k===4?"#8df0c6":"#d7e8fb"}));
+      lbl("M-1001: 2 × 480 = 960 · 3 × 96 = 288 · 0 cartons · 2 loose packs",-34,2.5,-8,{size:21,color:"#9fd0ff"});
+      // bucket-aware representative outputs
+      const fpObjects=[
+        [0,"FP-01",BUCKETS.AMB_VIE.id,-35,-5],[0,"FP-02",BUCKETS.AMB_VIE.id,-33,-5],
+        [5,"FP-03",BUCKETS.COOL_VIE.id,-29,-5],[5,"FP-04",BUCKETS.COOL_VIE.id,-27,-5],
+        [4,"AF-01",BUCKETS.AIR_PAR.id,-22,-5],[3,"FP-05",BUCKETS.AMB_ZRH.id,-35,4],[3,"FP-06",BUCKETS.AMB_ZRH.id,-32.5,4],
+      ];
+      fpObjects.forEach(([ci,id,bid,x,z],k)=>dropIn(fullPallet(ci),x,0,z,{kind:"Pallet",id,bucketId:bid,type:"Homogeneous full pallet",output:"ExecutionCalcPallets"},k*0.08));
+      [0,1,2].forEach((k)=>dropIn(layerUnit(0),-31+k*1.45,0,-3.2,{kind:"Layer",id:`LY-A-${k+1}`,bucketId:BUCKETS.AMB_VIE.id,materials:"M-1001",qty:96},0.2+k*0.08));
+      [0,1].forEach((k)=>dropIn(layerUnit(5),-29+k*1.45,0,-3.2,{kind:"Layer",id:`LY-C-${k+1}`,bucketId:BUCKETS.COOL_VIE.id,materials:"M-2002",qty:48},0.4+k*0.08));
+      [0,1].forEach((k)=>dropIn(longCarrier(2),-27+k*2.2,0.7,4,{kind:"MPG input",id:`LG-${k+1}`,bucketId:BUCKETS.LONG_PAR.id,materials:"M-6006"},0.5+k*0.1));
+      dropIn(cartonBox(0,0.42),-31.5,0,-6.0,{kind:"Loose pack",id:"PAC-M1001-01",bucketId:BUCKETS.AMB_VIE.id,quantity:1},0.7);
+      dropIn(cartonBox(0,0.42),-30.8,0,-6.0,{kind:"Loose pack",id:"PAC-M1001-02",bucketId:BUCKETS.AMB_VIE.id,quantity:1},0.76);
+      if (!instant) {
+        if (!instant) addLog("M-1001 reconciled: 1,250 − 960 = 290; 290 − 288 = 2; 0 cartons; 2 loose packs.","ok");
+        if (!instant) addLog("All decomposition outputs retained their planning-bucket identity.","ok");
       }
-      // loose packs row (z=6)
-      for (let k = 0; k < 15; k++) {
-        const ci = [0, 0, 0, 0, 0, 0, 5, 5, 5, 4, 4, 1, 1, 3, 3][k];
-        dropIn(cartonBox(ci, 0.4), -30 + (k % 10) * 0.9, 0, 6 + Math.floor(k / 10) * 0.9,
-          { kind: "Loose pack", id: "PAC-" + (k + 1), type: "Loose sales pack", output: "ExecutionCalcItems" }, 0.7 + k * 0.05);
-      }
-      addLog("M-1001: 2 full pallets created (EPF).", "ok");
-      addLog("M-2002 / M-4004: 4 further full pallets created.", "ok");
-      addLog("7 homogeneous layers created (EPL) — staged for MPL.", "ok");
-      addLog("11 cartons and 15 loose packs remain (CAR / PAC) — routed to MPM.");
     }
 
     if (i === 3) {
-      // Phase 4: MPL builder
-      const plat = new THREE.Mesh(new THREE.BoxGeometry(12, 0.15, 10), new THREE.MeshLambertMaterial({ color: 0x1b2636 }));
-      put(plat, -8, 0.07, 0, null);
-      lbl("MPL Builder — Mixed Pallet from Homogeneous Layers", -8, 7.2, -5.5, { size: 32, color: "#d9b8ff" });
-      lbl("Sort: overhang ↓ · length ↓ · width ↓ · weight ↓", -8, 6.3, -5.5, { size: 24, color: "#c9a8ef" });
-      const m1 = mplPallet([0, 0, 5]);
-      dropIn(m1, -10.5, 0.15, 0, { kind: "Pallet", id: "MPL-01", type: "MPL — mixed pallet from homogeneous layers", materials: "M-1001 (2 layers) + M-2002 (1 layer)", layers: 3, height: "1.75 m", weight: "410 kg", overhang: "No", temp: "Ambient/2–8 °C compatible bucket", stackable: "Yes", stack: "ST-02", tu: "TU 1", output: "ExecutionCalcPallets · PalletID MPL-01" });
-      const m2 = mplPallet([0, 1], true);
-      dropIn(m2, -5.5, 0.15, 0, { kind: "Pallet", id: "MPL-02", type: "MPL — mixed pallet from homogeneous layers", materials: "M-1001 (1 layer) + M-5005 (overhang layer)", layers: 2, height: "1.30 m", weight: "300 kg", overhang: "Yes — 120 mm", temp: "Ambient", stackable: "No (overhang)", stack: "ST-05 (single)", tu: "TU 1", output: "ExecutionCalcPallets · PalletID MPL-02" }, 0.5);
-      // flying layer decision
-      if (!instant) {
-        const fl = layerUnit(5);
-        put(fl, -8, 5.5, 6, null);
-        tween(fl.position, [-10.5, 1.7, 0], 1.4, 1.2);
-      }
-      lbl("✔ Compatible — Add to Existing MPL", -10.5, 4.3, 1.6, { size: 26, color: "#8df0c6" });
-      lbl("✖ Incompatible (overhang) — Create New MPL", -5.5, 4.3, 1.6, { size: 26, color: "#ffb3b3" });
-      addLog("Layer M-2002 compatible → added to existing MPL-01.", "ok");
-      addLog("Layer M-5005 incompatible (overhang) → new MPL-02 created.", "warn");
+      const plat=new THREE.Mesh(new THREE.BoxGeometry(13,0.15,11),new THREE.MeshLambertMaterial({color:0x1b2636})); put(plat,-8,0.07,0);
+      lbl("MPL Builder — complete homogeneous layers only",-8,7.2,-5.5,{size:32,color:"#d9b8ff"});
+      const m1=mplPallet([0,0,0]);
+      dropIn(m1,-11,0.15,0,{kind:"Pallet",id:"MPL-01",bucketId:BUCKETS.AMB_VIE.id,type:"MPL",materials:"M-1001 · 3 ambient layers",layers:3,temp:"Ambient",rule:"Same source · destination · departure · mode · temperature"});
+      const m2=mplPallet([5,5]);
+      dropIn(m2,-5.5,0.15,0,{kind:"Pallet",id:"MPL-02",bucketId:BUCKETS.COOL_VIE.id,type:"MPL",materials:"M-2002 · 2 cool layers",layers:2,temp:"2–8 °C",rule:"Temperature-controlled layers remain separate"},0.35);
+      lbl(BUCKETS.AMB_VIE.id,-11,4.2,1.7,{size:23,color:BUCKETS.AMB_VIE.color});
+      lbl(BUCKETS.COOL_VIE.id,-5.5,4.2,1.7,{size:23,color:BUCKETS.COOL_VIE.color});
+      lbl("Rejected: Temperature requirement incompatible",-8,5.4,4.2,{size:25,color:"#ffb3b3"});
+      lbl("No material-level ambient-in-cool compatibility rule is defined",-8,4.6,4.2,{size:21,color:"#ffd97a"});
+      if(!instant){addLog("MPL-01 created from ambient M-1001 layers only.","ok");addLog("M-2002 rejected from MPL-01: temperature requirement incompatible.","warn");addLog("MPL-02 created for BKT-VIE-ROAD-COOL.","ok");}
     }
 
     if (i === 4) {
-      // Phase 5: MPM builder
-      const plat = new THREE.Mesh(new THREE.BoxGeometry(12, 0.15, 10), new THREE.MeshLambertMaterial({ color: 0x1b2636 }));
-      put(plat, 7, 0.07, 0, null);
-      lbl("MPM Builder — Mixed Pallet from Cartons & Loose Goods", 7, 7.2, -5.5, { size: 32, color: "#d9b8ff" });
-      lbl("Σ volume → DispersionFactorMP 1.25 → theoretical height → MinimumHeightLayerLL → MaxMPHeight/Weight", 7, 6.3, -5.5, { size: 22, color: "#c9a8ef" });
-      dropIn(mpmPallet([0, 5, 4], 1.5, 7), 4, 0.15, 0,
-        { kind: "Pallet", id: "MPM-01", type: "MPM — volume-based mixed pallet", materials: "M-1001 · M-2002 · M-3003 cartons/packs", layers: "theoretical (volume-based)", height: "1.84 m (est.)", weight: "290 kg", overhang: "No", temp: "Ambient", stackable: "Yes", stack: "ST-03", tu: "TU 1", output: "ExecutionCalcLayers + ExecutionCalcPallets · Type MPM" });
-      lbl("✔ Volume fits — 1 pallet", 4, 3.6, 1.6, { size: 26, color: "#8df0c6" });
-      dropIn(mpmPallet([3, 1], 1.5, 21), 9.5, 0.15, 0,
-        { kind: "Pallet", id: "MPM-02", type: "MPM — volume-based mixed pallet", materials: "M-4004 · M-5005 cartons", height: "1.62 m (est.)", weight: "480 kg", note: "First half of a weight-driven split", output: "Type MPM" }, 0.4);
-      dropIn(mpmPallet([3, 1], 0.9, 33), 13, 0.15, 0,
-        { kind: "Pallet", id: "MPM-03", type: "MPM — volume-based mixed pallet", materials: "M-4004 · M-5005 remainder", height: "1.05 m (est.)", weight: "310 kg", note: "Created by MaxMPWeight split", output: "Type MPM" }, 0.7);
-      lbl("✖ MaxMPWeight exceeded — split into 2 pallets", 11.2, 3.8, 1.6, { size: 26, color: "#ffb3b3" });
-      addLog("MPM-01 built: loose-item volume fits one pallet (dispersion 1.25).", "ok");
-      addLog("MPM split: MaxMPWeight exceeded → MPM-02 + MPM-03 created.", "warn");
+      const plat=new THREE.Mesh(new THREE.BoxGeometry(14,0.15,12),new THREE.MeshLambertMaterial({color:0x1b2636})); put(plat,7,0.07,0);
+      lbl("MPM Builder — cartons & loose goods within one bucket",7,7.2,-5.8,{size:31,color:"#d9b8ff"});
+      const plans=[
+        [PALLET_PLAN.mpm[0],0,4,-2],[PALLET_PLAN.mpm[1],5,8,-2],[PALLET_PLAN.mpm[2],4,11,-2],
+      ];
+      plans.forEach(([p,ci,x,z],k)=>{
+        dropIn(mpmPallet([ci],p.height,10+k*7),x,0.15,z,{kind:"Pallet",...p,type:"MPM — bucket-separated",rule:"source + destination + departure + mode + temperature"},k*0.25);
+        lbl(p.id,x,3.6,z+1.6,{size:25,color:"#8df0c6"}); lbl(p.bucketId,x,4.35,z+1.6,{size:19,color:"#cbd5e1"});
+      });
+      const rejects=["Rejected: Different destination","Rejected: Different TU mode","Rejected: Temperature requirement incompatible","Rejected: Different departure bucket"];
+      rejects.forEach((r,k)=>lbl(r,7,5.5-k*0.62,4.1,{size:22,color:k===2?"#ffb3b3":"#ffd97a"}));
+      if(!instant){addLog("MPM-01 kept in BKT-VIE-ROAD-AMBIENT.","ok");addLog("M-2002 rejected from MPM-01: temperature requirement incompatible.","warn");addLog("M-3003 rejected from road MPMs: different TU mode and destination.","warn");addLog("Three bucket-specific MPM pallets created.","ok");}
     }
 
     if (i === 5) {
@@ -450,7 +516,7 @@ export default function ForecastToTransportSim() {
       dropIn(longCarrier(2), 3.5, 0.7, 17,
         { kind: "Pallet", id: "MPG-02", type: "MPG — long-goods carrier", materials: "M-6006 Aluminium Profiles 4.2 m", stackable: "No", tu: "TU 3" }, 0.4);
       lbl("Overlong → standard pallet logic not applied · dedicated TU required", -2, 3.4, 20.5, { size: 24, color: "#ffd97a" });
-      addLog("Long goods M-6006 routed to special lane — 2 MPG carriers created.", "warn");
+      if (!instant) addLog("Long goods M-6006 routed to special lane — 2 MPG carriers created.", "warn");
     }
 
     if (i === 6) {
@@ -487,81 +553,60 @@ export default function ForecastToTransportSim() {
       const ob = palletBase(); ob.scale.set(1.45, 1, 1.5); stE.add(ob);
       dropIn(stE, 30, 0, -3, { kind: "Stack", id: "ST-OS-01", pallets: "Oversize pallet", status: "Handled separately — footprint differs from standard", tu: "TU 1 (dedicated slot)" }, 0.9);
       lbl("Oversize — separate handling", 30, 3.2, -1.2, { size: 23, color: "#cbd5e1" });
-      addLog("ST-01 built: FP-01 + MPL-01 stacked (height & weight checks passed).", "ok");
-      addLog("Heavy pallet FP-05 non-stackable → single-pallet stack.", "warn");
-      addLog("Air-freight pallets kept as single stacks.");
-      addLog("10 transport-ready stacks created in total.");
+      if (!instant) addLog("ST-01 built: FP-01 + MPL-01 stacked (height & weight checks passed).", "ok");
+      if (!instant) addLog("Heavy pallet FP-05 non-stackable → single-pallet stack.", "warn");
+      if (!instant) addLog("Air-freight pallets kept as single stacks.");
+      if (!instant) addLog("10 transport-ready stacks created in total.");
     }
 
     if (i === 7) {
-      // Phase 8: TU selection
-      lbl("Transport-Unit Selection — lane priority list", 40, 8.4, -9, { size: 32, color: "#7fe7f7" });
-      const cands = [
-        { kind: "box", name: "Small Box Truck", x: 34, verdict: "✖ Rejected: volume capacity too small", col: "#ffb3b3", ok: false },
-        { kind: "standard", name: "Standard Trailer", x: 40, verdict: "✖ Rejected for pharma: Temperature-Controlled TU required", col: "#ffb3b3", ok: false, ok2: true, verdict2: "✔ Selected for ambient stacks" },
-        { kind: "highcube", name: "High-Cube Trailer", x: 46, verdict: "✖ Rejected: Stack exceeds inner height on prior check — held as fallback", col: "#ffd97a", ok: false },
-        { kind: "temp", name: "Temperature-Controlled Trailer", x: 52, verdict: "✔ Selected for 2–8 °C stacks", col: "#8df0c6", ok: true },
+      lbl("Transport-Unit Selection — lane-specific priority sequences",40,9.0,-9,{size:32,color:"#7fe7f7"});
+      const rows=[
+        {b:BUCKETS.AMB_VIE,z:-6,items:["1 Small Box Truck — Rejected: required 22.4 m³ > 18.0 m³","2 Standard Trailer — Selected"]},
+        {b:BUCKETS.COOL_VIE,z:-2,items:["1 Temperature-Controlled Box Truck — Selected","2 Temperature-Controlled Trailer — not evaluated"]},
+        {b:BUCKETS.AIR_PAR,z:2,items:["1 Air-Freight Unit — Selected","2 Air-Freight ULD — not evaluated"]},
+        {b:BUCKETS.LONG_PAR,z:6,items:["1 Long-Goods Trailer — Selected","2 Extended-Length Trailer — not evaluated"]},
       ];
-      cands.forEach((c, k) => {
-        const t = truckUnit(c.kind);
-        dropIn(t, c.x, 0, k % 2 === 0 ? -3 : 3,
-          { kind: "Transport unit (candidate)", id: c.name, type: c.name, mode: c.kind === "air" ? "Air" : "Road", lane: "Oberhausen → Vienna", temp: c.kind === "temp" ? "2–8 °C capable" : "Ambient only", status: c.ok || c.ok2 ? "Selected" : "Rejected" }, k * 0.2);
-        const l1 = makeLabel(c.verdict, { size: 24, color: c.col });
-        l1.position.set(c.x, 5.6, k % 2 === 0 ? -3 : 3); D.add(l1);
-        if (c.verdict2) { const l2 = makeLabel(c.verdict2, { size: 24, color: "#8df0c6" }); l2.position.set(c.x, 6.4, -3); D.add(l2); }
-        if (c.ok || c.ok2) { const r = ring(0x34d399, 6.2); r.position.set(c.x, 0.03, k % 2 === 0 ? -3 : 3); D.add(r); }
+      rows.forEach((r,ri)=>{
+        lbl(`${r.b.id} · ${r.b.source} → ${r.b.destination} · ${r.b.mode} · ${r.b.temperature}`,40,7.4,r.z,{size:21,color:r.b.color});
+        r.items.forEach((txt,k)=>lbl(txt,40,6.7-k*0.62,r.z,{size:19,color:txt.includes("Rejected")?"#ffb3b3":"#8df0c6"}));
       });
-      addLog("TU check: Small Box Truck rejected (volume capacity).", "warn");
-      addLog("TU check: Standard Trailer rejected for pharma — Temperature-Controlled TU required.", "warn");
-      addLog("TU check: High-Cube held — stack exceeds inner height case documented.", "warn");
-      addLog("Standard Trailer selected (ambient) · Temp-Controlled Trailer selected (2–8 °C).", "ok");
+      lbl("High-Cube dimensional check",50,7.4,-6,{size:23,color:"#ffd97a"});
+      lbl("Stack height 4.05 m",50,6.7,-6,{size:20,color:"#cbd5e1"});
+      lbl("Usable inner height 3.85 m − loading margin 0.10 m = 3.75 m",50,6.1,-6,{size:18,color:"#cbd5e1"});
+      lbl("Rejected by 0.30 m",50,5.5,-6,{size:22,color:"#ffb3b3"});
+      if(!instant){addLog("BKT-VIE-ROAD-AMBIENT: Small Box Truck rejected — 22.4 m³ required vs 18.0 m³ available.","warn");addLog("BKT-VIE-ROAD-AMBIENT: Standard Trailer selected at sequence 2.","ok");addLog("BKT-VIE-ROAD-COOL: Temperature-Controlled Box Truck selected at sequence 1.","ok");addLog("BKT-PAR-AIR-AMBIENT: Air-Freight Unit selected; road TUs rejected by mode.","ok");addLog("High-Cube rejected: 4.05 m stack exceeds 3.75 m usable height by 0.30 m.","warn");}
     }
 
     if (i === 8) {
-      // Phase 9: loading + result
-      lbl("Loading Docks & Result Area", 58, 9.4, -10, { size: 34, color: "#7fe7f7" });
-      const t1 = truckUnit("standard");
-      put(t1, 54, 0, -5, { kind: "Transport unit", id: "TU 1", type: "Standard Trailer", mode: "Road", lane: "Oberhausen → Vienna/Zurich", temp: "Ambient", stacks: 5, pallets: 8, floor: "92%", vol: "84%", weight: "61%", status: "Closed on floor-space limit" });
-      [[-3.4, -0.9], [-0.8, -0.9], [1.8, -0.9], [-3.4, 0.9], [-0.8, 0.9]].forEach(([dx, dz], k) => {
-        const s = k === 0 ? (() => { const g = new THREE.Group(); g.add(fullPallet(0)); const p = mplPallet([0, 5]); p.position.y = 1.95; g.add(p); return g; })()
-          : k === 1 ? fullPallet(0) : k === 2 ? mpmPallet([0, 5, 4], 1.3, 7 + k) : fullPallet(k === 3 ? 3 : 0);
-        s.scale.set(0.82, 0.82, 0.82);
-        s.position.set(54 + dx, instant ? 0.82 : 7, -5 + dz);
-        s.traverse((o) => { o.userData.pick = { kind: "Loaded stack", id: "ST-0" + (k + 1), tu: "TU 1" }; });
-        D.add(s);
-        if (!instant) tween(s.position, [54 + dx, 0.82, -5 + dz], 0.8, 0.3 + k * 0.25);
+      lbl("Loading Docks & Calculated Capacity Result",61,10.0,-12,{size:34,color:"#7fe7f7"});
+      const layouts=[
+        {res:TU_RESULTS[0],kind:"standard",x:53,z:-7,loads:[[0,-2.8,-0.65],[0,-0.5,0.65],[0,2.0,-0.65]]},
+        {res:TU_RESULTS[1],kind:"temp",x:53,z:3,loads:[[5,-2.5,-0.55],[5,0.1,0.55],[5,2.3,-0.55]]},
+        {res:TU_RESULTS[2],kind:"air",x:66,z:-7,loads:[[4,-1.8,0],[4,1.5,0]]},
+        {res:TU_RESULTS[3],kind:"standard",x:66,z:3,loads:[[3,-2.8,-0.65],[3,-0.5,0.65],[1,2.0,-0.65]]},
+        {res:TU_RESULTS[4],kind:"long",x:80,z:-2,loads:[]},
+      ];
+      layouts.forEach((cfg,ti)=>{
+        const truck=truckUnit(cfg.kind); put(truck,cfg.x,0,cfg.z,{kind:"Transport unit",...cfg.res});
+        cfg.loads.forEach(([ci,dx,dz],k)=>{
+          const load=fullPallet(ci); load.scale.set(0.68,0.68,0.68);
+          const target=[cfg.x+dx,0.82,cfg.z+dz]; load.position.set(target[0],instant?target[1]:8,target[2]);
+          load.traverse(o=>{o.userData.pick={kind:"Loaded stack",id:`${cfg.res.id}-ST-${k+1}`,bucketId:cfg.res.bucketId,tu:cfg.res.id};}); D.add(load);
+          if(!instant)tween(load.position,target,0.75,0.25+ti*0.12+k*0.14);
+        });
+        lbl(`${cfg.res.id} · ${cfg.res.type}`,cfg.x,6.1,cfg.z,{size:23,color:cfg.res.color});
+        lbl(`${cfg.res.bucketId} · floor ${cfg.res.floor}% · vol ${cfg.res.vol}% · wt ${cfg.res.weight}%`,cfg.x,6.8,cfg.z,{size:18,color:"#cbd5e1"});
       });
-      lbl("TU 1 · floor 92% · vol 84% · wt 61%", 54, 6.2, -5, { size: 25, color: "#7fe7f7" });
-      lbl("“TU 1 closed due to floor-space limit”", 54, 7.0, -5, { size: 24, color: "#ffd97a" });
-
-      const t2 = truckUnit("temp");
-      put(t2, 54, 0, 4.5, { kind: "Transport unit", id: "TU 2", type: "Temperature-Controlled Trailer", mode: "Road", lane: "Oberhausen → Vienna", temp: "2–8 °C", stacks: 2, pallets: 3, floor: "54%", vol: "47%", weight: "43%", status: "Temperature-controlled load" });
-      [[-3.0, 0], [-0.4, 0]].forEach(([dx, dz], k) => {
-        const s = k === 0 ? (() => { const g = new THREE.Group(); g.add(fullPallet(5)); const p = fullPallet(5); p.position.y = 1.95; p.scale.set(1, 0.7, 1); g.add(p); return g; })() : fullPallet(5);
-        s.scale.set(0.82, 0.82, 0.82);
-        s.position.set(54 + dx, instant ? 0.82 : 7, 4.5 + dz);
-        s.traverse((o) => { o.userData.pick = { kind: "Loaded stack", id: "ST-T" + (k + 1), tu: "TU 2" }; });
-        D.add(s);
-        if (!instant) tween(s.position, [54 + dx, 0.82, 4.5 + dz], 0.8, 1.2 + k * 0.25);
+      // Long carriers are placed fully inside the dedicated trailer and separated longitudinally.
+      [[-2.4,-0.45],[2.4,0.45]].forEach(([dx,dz],k)=>{
+        const load=longCarrier(2); load.scale.set(0.62,0.62,0.62); const target=[80+dx,0.82,-2+dz]; load.position.set(target[0],instant?target[1]:8,target[2]);
+        load.traverse(o=>{o.userData.pick={kind:"Loaded long-goods stack",id:`TU 5-ST-${k+1}`,bucketId:BUCKETS.LONG_PAR.id,tu:"TU 5"};}); D.add(load);
+        if(!instant)tween(load.position,target,0.8,1.2+k*0.22);
       });
-      lbl("“TU 2 created for remaining (temp) stacks”", 54, 6.2, 4.5, { size: 24, color: "#8ecbff" });
-
-      const t3l = truckUnit("long");
-      put(t3l, 66, 0, 0, { kind: "Transport unit", id: "TU 3", type: "Long-Goods Trailer", mode: "Road", lane: "Nuremberg → Paris", temp: "Ambient", stacks: 2, pallets: 2, floor: "48%", vol: "39%", weight: "35%", status: "Dedicated long-goods unit" });
-      [[-2.4], [2.0]].forEach(([dx], k) => {
-        const s = longCarrier(2); s.scale.set(0.85, 0.85, 0.85);
-        s.position.set(66 + dx, instant ? 0.82 : 7, 0);
-        s.traverse((o) => { o.userData.pick = { kind: "Loaded stack", id: "ST-LG-0" + (k + 1), tu: "TU 3" }; });
-        D.add(s);
-        if (!instant) tween(s.position, [66 + dx, 0.82, 0], 0.8, 1.8 + k * 0.25);
-      });
-      lbl("TU 3 · long goods · floor 48%", 66, 5.6, 0, { size: 25, color: "#ffd97a" });
-      addLog("TU 1 loaded: 5 stacks / 8 pallets — closed due to floor-space limit.", "ok");
-      addLog("TU 2 created for remaining temperature-controlled stacks.", "ok");
-      addLog("TU 3 loaded with 2 MPG long-goods carriers.", "ok");
-      addLog("Loading completed — 3 transport units planned, 4 warnings, 1 master-data issue.", "ok");
-    }
-  }, [addLog, tween]);
+      lbl("Truck and pallet geometry separated: all loads use trailer-relative slots",66,9.0,8,{size:23,color:"#8df0c6"});
+      if(!instant){TU_RESULTS.forEach(t=>addLog(`${t.id} loaded for ${t.bucketId}: ${t.stacks} stacks / ${t.pallets} pallets.`,"ok"));addLog(`Loading completed — ${SUMMARY.totalTUs} lane-specific transport units planned.`,"ok");}
+    }  }, [addLog, tween]);
 
   /* ------------------------ phase navigation ------------------------ */
   const gotoPhase = useCallback((i, viaAuto = false) => {
@@ -569,10 +614,8 @@ export default function ForecastToTransportSim() {
     const t3 = threeRef.current; if (!t3) return;
     if (i < builtRef.current) {
       // rebuild world from scratch up to i (instant)
-      while (t3.dynamic.children.length) {
-        const c = t3.dynamic.children.pop();
-        t3.dynamic.remove(c);
-      }
+      clearScheduled();
+      clearGroup(t3.dynamic);
       t3.tweens.length = 0; t3.pulses.length = 0;
       for (let k = 0; k <= i; k++) buildPhase(k, k < i);
       builtRef.current = i;
@@ -585,26 +628,33 @@ export default function ForecastToTransportSim() {
     setPhase(i);
     if (autoCamRef.current || !viaAuto) flyCam(PHASES[i].cam, PHASES[i].tgt, viaAuto ? 2.0 : 1.4);
     if (i === PHASES.length - 1) {
-      setTimeout(() => setShowDash(true), viaAuto ? 3500 : 1200);
+      schedule(() => {
+        if (phaseRef.current === PHASES.length - 1) setShowDash(true);
+      }, viaAuto ? 3500 : 1200);
     }
-  }, [buildPhase, flyCam]);
+  }, [buildPhase, flyCam, schedule, clearScheduled]);
 
   const startSim = useCallback(() => {
     setStarted(true);
     setPlaying(true); playRef.current = true;
-    setTimeout(() => gotoPhase(0), 60);
-  }, [gotoPhase]);
+    clearScheduled();
+    schedule(() => gotoPhase(0), 60);
+  }, [gotoPhase, schedule, clearScheduled]);
 
   const resetSim = useCallback(() => {
     const t3 = threeRef.current; if (!t3) return;
-    while (t3.dynamic.children.length) t3.dynamic.remove(t3.dynamic.children.pop());
+    clearScheduled();
+    clearGroup(t3.dynamic);
     t3.tweens.length = 0; t3.pulses.length = 0;
     builtRef.current = -1; phaseRef.current = -1; timerRef.current = 0; logSeq.current = 0;
     setLogs([]); setSelected(null); setShowDash(false); setPhase(-1);
     setPlaying(false); playRef.current = false;
     flyCam([0, 55, 85], [0, 2, 4]);
-    setTimeout(() => gotoPhase(0), 400);
-  }, [flyCam, gotoPhase]);
+    schedule(() => gotoPhase(0), 400);
+  }, [flyCam, gotoPhase, schedule, clearScheduled]);
+
+
+  useEffect(() => () => clearScheduled(), [clearScheduled]);
 
   /* --------------------------- three setup --------------------------- */
   useEffect(() => {
