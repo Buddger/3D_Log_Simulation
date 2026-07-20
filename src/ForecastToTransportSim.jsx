@@ -129,7 +129,7 @@ function makeLabel(text, opts = {}) {
   const tex = new THREE.CanvasTexture(cv);
   tex.minFilter = THREE.LinearFilter;
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
-  const s = 0.011;
+  const s = opts.scale ?? 0.0085;
   sp.scale.set(cv.width * s, cv.height * s, 1);
   return sp;
 }
@@ -441,13 +441,17 @@ export default function ForecastToTransportSim() {
       lbl("Quantity Decomposition — strict bucket lanes", -26, 8.0, -9, { size: 34, color: "#8ecbff" });
       lbl("Scenario-based heuristic simulation using illustrative master data", -26, 7.1, -9, { size: 22, color: "#ffd97a" });
       const laneDefs=[
-        [BUCKETS.AMB_VIE,-34,-5],[BUCKETS.COOL_VIE,-28,-5],[BUCKETS.AIR_PAR,-22,-5],[BUCKETS.AMB_ZRH,-34,4],[BUCKETS.LONG_PAR,-25,4],
+        [BUCKETS.AMB_VIE,-36,-5,"A · Vienna road · Ambient"],
+        [BUCKETS.COOL_VIE,-29,-5,"B · Vienna road · 2–8 °C"],
+        [BUCKETS.AIR_PAR,-22,-5,"C · Paris air · Ambient"],
+        [BUCKETS.AMB_ZRH,-35,4,"D · Zurich road · Ambient"],
+        [BUCKETS.LONG_PAR,-25,4,"E · Paris road · Long goods"],
       ];
-      laneDefs.forEach(([b,x,z])=>{
-        const floor=new THREE.Mesh(new THREE.BoxGeometry(5.2,0.08,6.5),new THREE.MeshBasicMaterial({color:new THREE.Color(b.color),transparent:true,opacity:0.12}));
+      laneDefs.forEach(([b,x,z,shortLabel])=>{
+        const floor=new THREE.Mesh(new THREE.BoxGeometry(6.2,0.08,6.5),new THREE.MeshBasicMaterial({color:new THREE.Color(b.color),transparent:true,opacity:0.12}));
         put(floor,x,0.04,z,{kind:"Planning bucket",...b});
-        lbl(b.id,x,0.35,z-2.6,{size:20,color:b.color});
-        lbl(`${b.source} → ${b.destination} · ${b.departure} · ${b.mode} · ${b.temperature}`,x,0.35,z-1.9,{size:16,color:"#cbd5e1"});
+        // Keep only one short, self-explanatory label in the 3D world. Full details are available in the legend and object panel.
+        lbl(shortLabel,x,0.32,z-2.55,{size:18,color:b.color,scale:0.0074});
       });
       const m=DECOMPOSITIONS.find(x=>x.demand.short==="M-1001");
       const steps=[
@@ -460,20 +464,23 @@ export default function ForecastToTransportSim() {
       steps.forEach((s,k)=>lbl(s,-34,5.9-k*0.65,-8.0,{size:21,color:k===4?"#8df0c6":"#d7e8fb"}));
       lbl("M-1001: 2 × 480 = 960 · 3 × 96 = 288 · 0 cartons · 2 loose packs",-34,2.5,-8,{size:21,color:"#9fd0ff"});
       // bucket-aware representative outputs
+      // Pallets are placed in dedicated non-overlapping slots. A standard pallet is 2.4 m wide, so every centre is at least 2.9 m apart.
       const fpObjects=[
-        [0,"FP-01",BUCKETS.AMB_VIE.id,-35,-5],[0,"FP-02",BUCKETS.AMB_VIE.id,-33,-5],
-        [5,"FP-03",BUCKETS.COOL_VIE.id,-29,-5],[5,"FP-04",BUCKETS.COOL_VIE.id,-27,-5],
-        [4,"AF-01",BUCKETS.AIR_PAR.id,-22,-5],[3,"FP-05",BUCKETS.AMB_ZRH.id,-35,4],[3,"FP-06",BUCKETS.AMB_ZRH.id,-32.5,4],
+        [0,"FP-01",BUCKETS.AMB_VIE.id,-37.5,-5.3],[0,"FP-02",BUCKETS.AMB_VIE.id,-34.4,-5.3],
+        [5,"FP-03",BUCKETS.COOL_VIE.id,-30.5,-5.3],[5,"FP-04",BUCKETS.COOL_VIE.id,-27.4,-5.3],
+        [4,"AF-01",BUCKETS.AIR_PAR.id,-22,-5.3],
+        [3,"FP-05",BUCKETS.AMB_ZRH.id,-36.6,3.6],[3,"FP-06",BUCKETS.AMB_ZRH.id,-33.5,3.6],
       ];
       fpObjects.forEach(([ci,id,bid,x,z],k)=>dropIn(fullPallet(ci),x,0,z,{kind:"Pallet",id,bucketId:bid,type:"Homogeneous full pallet",output:"ExecutionCalcPallets"},k*0.08));
-      [0,1,2].forEach((k)=>dropIn(layerUnit(0),-31+k*1.45,0,-3.2,{kind:"Layer",id:`LY-A-${k+1}`,bucketId:BUCKETS.AMB_VIE.id,materials:"M-1001",qty:96},0.2+k*0.08));
-      [0,1].forEach((k)=>dropIn(layerUnit(5),-29+k*1.45,0,-3.2,{kind:"Layer",id:`LY-C-${k+1}`,bucketId:BUCKETS.COOL_VIE.id,materials:"M-2002",qty:48},0.4+k*0.08));
-      [0,1].forEach((k)=>dropIn(longCarrier(2),-27+k*2.2,0.7,4,{kind:"MPG input",id:`LG-${k+1}`,bucketId:BUCKETS.LONG_PAR.id,materials:"M-6006"},0.5+k*0.1));
-      dropIn(cartonBox(0,0.42),-31.5,0,-6.0,{kind:"Loose pack",id:"PAC-M1001-01",bucketId:BUCKETS.AMB_VIE.id,quantity:1},0.7);
-      dropIn(cartonBox(0,0.42),-30.8,0,-6.0,{kind:"Loose pack",id:"PAC-M1001-02",bucketId:BUCKETS.AMB_VIE.id,quantity:1},0.76);
+      // Layers are shown behind their full pallets rather than in the same footprint.
+      [0,1,2].forEach((k)=>dropIn(layerUnit(0),-37.5+k*2.55,0,-2.7,{kind:"Layer",id:`LY-A-${k+1}`,bucketId:BUCKETS.AMB_VIE.id,materials:"M-1001",qty:96},0.2+k*0.08));
+      [0,1].forEach((k)=>dropIn(layerUnit(5),-30.5+k*2.55,0,-2.7,{kind:"Layer",id:`LY-C-${k+1}`,bucketId:BUCKETS.COOL_VIE.id,materials:"M-2002",qty:48},0.4+k*0.08));
+      [0,1].forEach((k)=>dropIn(longCarrier(2),-27+k*2.8,0.7,4.4,{kind:"MPG input",id:`LG-${k+1}`,bucketId:BUCKETS.LONG_PAR.id,materials:"M-6006"},0.5+k*0.1));
+      dropIn(cartonBox(0,0.42),-38.2,0,-7.0,{kind:"Loose pack",id:"PAC-M1001-01",bucketId:BUCKETS.AMB_VIE.id,quantity:1},0.7);
+      dropIn(cartonBox(0,0.42),-37.4,0,-7.0,{kind:"Loose pack",id:"PAC-M1001-02",bucketId:BUCKETS.AMB_VIE.id,quantity:1},0.76);
       if (!instant) {
-        if (!instant) addLog("M-1001 reconciled: 1,250 − 960 = 290; 290 − 288 = 2; 0 cartons; 2 loose packs.","ok");
-        if (!instant) addLog("All decomposition outputs retained their planning-bucket identity.","ok");
+        addLog("M-1001 reconciled: 1,250 − 960 = 290; 290 − 288 = 2; 0 cartons; 2 loose packs.","ok");
+        addLog("All decomposition outputs retained their planning-bucket identity.","ok");
       }
     }
 
@@ -484,10 +491,9 @@ export default function ForecastToTransportSim() {
       dropIn(m1,-11,0.15,0,{kind:"Pallet",id:"MPL-01",bucketId:BUCKETS.AMB_VIE.id,type:"MPL",materials:"M-1001 · 3 ambient layers",layers:3,temp:"Ambient",rule:"Same source · destination · departure · mode · temperature"});
       const m2=mplPallet([5,5]);
       dropIn(m2,-5.5,0.15,0,{kind:"Pallet",id:"MPL-02",bucketId:BUCKETS.COOL_VIE.id,type:"MPL",materials:"M-2002 · 2 cool layers",layers:2,temp:"2–8 °C",rule:"Temperature-controlled layers remain separate"},0.35);
-      lbl(BUCKETS.AMB_VIE.id,-11,4.2,1.7,{size:23,color:BUCKETS.AMB_VIE.color});
-      lbl(BUCKETS.COOL_VIE.id,-5.5,4.2,1.7,{size:23,color:BUCKETS.COOL_VIE.color});
-      lbl("Rejected: Temperature requirement incompatible",-8,5.4,4.2,{size:25,color:"#ffb3b3"});
-      lbl("No material-level ambient-in-cool compatibility rule is defined",-8,4.6,4.2,{size:21,color:"#ffd97a"});
+      lbl("Ambient MPL",-11,3.6,1.7,{size:20,color:BUCKETS.AMB_VIE.color,scale:0.0075});
+      lbl("Cool MPL · 2–8 °C",-5.5,3.6,1.7,{size:20,color:BUCKETS.COOL_VIE.color,scale:0.0075});
+      lbl("Separate pallets: temperature incompatible",-8,5.0,4.2,{size:20,color:"#ffb3b3",scale:0.0075});
       if(!instant){addLog("MPL-01 created from ambient M-1001 layers only.","ok");addLog("M-2002 rejected from MPL-01: temperature requirement incompatible.","warn");addLog("MPL-02 created for BKT-VIE-ROAD-COOL.","ok");}
     }
 
@@ -499,10 +505,9 @@ export default function ForecastToTransportSim() {
       ];
       plans.forEach(([p,ci,x,z],k)=>{
         dropIn(mpmPallet([ci],p.height,10+k*7),x,0.15,z,{kind:"Pallet",...p,type:"MPM — bucket-separated",rule:"source + destination + departure + mode + temperature"},k*0.25);
-        lbl(p.id,x,3.6,z+1.6,{size:25,color:"#8df0c6"}); lbl(p.bucketId,x,4.35,z+1.6,{size:19,color:"#cbd5e1"});
+        lbl(`${p.id} · ${p.temp}`,x,3.6,z+1.6,{size:20,color:"#8df0c6",scale:0.0075});
       });
-      const rejects=["Rejected: Different destination","Rejected: Different TU mode","Rejected: Temperature requirement incompatible","Rejected: Different departure bucket"];
-      rejects.forEach((r,k)=>lbl(r,7,5.5-k*0.62,4.1,{size:22,color:k===2?"#ffb3b3":"#ffd97a"}));
+      lbl("Rejected goods remain in their original bucket",7,5.1,4.1,{size:20,color:"#ffd97a",scale:0.0075});
       if(!instant){addLog("MPM-01 kept in BKT-VIE-ROAD-AMBIENT.","ok");addLog("M-2002 rejected from MPM-01: temperature requirement incompatible.","warn");addLog("M-3003 rejected from road MPMs: different TU mode and destination.","warn");addLog("Three bucket-specific MPM pallets created.","ok");}
     }
 
@@ -956,6 +961,26 @@ export default function ForecastToTransportSim() {
           <div style={{ fontSize: 11, color: "#4dc3ff", textTransform: "uppercase", letterSpacing: 1 }}>{ph.zone}</div>
           <div style={{ fontWeight: 700, margin: "4px 0 6px" }}>{ph.name}</div>
           <div style={{ fontSize: 12.5, lineHeight: 1.5, color: "#c7d5e3" }}>{ph.info}</div>
+          <details open={phase === 2} style={{ marginTop: 9, fontSize: 11.5, color: "#c7d5e3" }}>
+            <summary style={{ cursor: "pointer", color: "#9fd0ff", fontWeight: 700 }}>Legend · planning buckets and objects</summary>
+            <div style={{ marginTop: 7, display: "grid", gap: 5 }}>
+              {[
+                [BUCKETS.AMB_VIE.color, "A · Vienna road · Ambient"],
+                [BUCKETS.COOL_VIE.color, "B · Vienna road · 2–8 °C"],
+                [BUCKETS.AIR_PAR.color, "C · Paris air · Ambient"],
+                [BUCKETS.AMB_ZRH.color, "D · Zurich road · Ambient"],
+                [BUCKETS.LONG_PAR.color, "E · Paris road · Long goods"],
+              ].map(([color, label]) => (
+                <div key={label} style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                  <span style={{ width: 10, height: 10, borderRadius: 2, background: color, display: "inline-block", flex: "0 0 auto" }} />
+                  <span>{label}</span>
+                </div>
+              ))}
+              <div style={{ borderTop: "1px solid " + C.border, marginTop: 3, paddingTop: 5, color: C.dim }}>
+                Solid block = full pallet · Thin block = homogeneous layer · Small box = carton/loose pack · Long carrier = MPG input. Click an object for its complete bucket ID and master data.
+              </div>
+            </div>
+          </details>
           {phase === 3 && (
             <details style={{ marginTop: 8, fontSize: 12, color: "#c7d5e3" }}>
               <summary style={{ cursor: "pointer", color: C.purple }}>MPL compatibility rules</summary>
