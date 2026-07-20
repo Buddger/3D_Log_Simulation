@@ -1,0 +1,19 @@
+:root { font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #e8edf4; background: #0a1017; }
+* { box-sizing: border-box; }
+html, body, #root { width: 100%; min-width: 320px; min-height: 100%; margin: 0; }
+body { min-height: 100vh; overflow: hidden; }
+button { font: inherit; }
+.hub-shell { min-height: 100vh; padding: 32px; display: grid; place-items: center; background: radial-gradient(circle at 50% 0%, #1a2331 0%, #0a1017 58%); }
+.hub-content { width: min(1120px, 100%); }
+.hub-eyebrow, .card-index { font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 800; letter-spacing: 1.4px; }
+.hub-eyebrow { color: #34d399; margin-bottom: 12px; }
+.hub-content h1 { max-width: 950px; margin: 0; font-size: clamp(32px, 5vw, 58px); line-height: 1.04; }
+.hub-intro { max-width: 820px; margin: 18px 0 30px; color: #8fa0b5; font-size: 17px; line-height: 1.65; }
+.hub-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.hub-grid h2 { margin: 18px 0 10px; font-size: 25px; }
+.hub-grid p { margin: 0 0 22px; color: #8fa0b5; line-height: 1.6; }
+.hub-grid strong { margin-top: auto; }
+.module-shell { position: fixed; inset: 0; background: #0a1017; }
+.global-home { position: fixed; z-index: 10000; top: 12px; right: 12px; padding: 9px 13px; border-radius: 9px; border: 1px solid #34d399; background: rgba(12,19,27,.94); color: #e8edf4; cursor: pointer; font-family: "IBM Plex Mono", monospace; font-size: 12px; font-weight: 700; }
+.global-home:hover { filter: brightness(1.12); }
+@media (max-width: 780px) { .hub-shell { padding: 20px; } .hub-grid { grid-template-columns: 1fr; } body { overflow: auto; } }
