@@ -52,6 +52,73 @@ const SECTIONS = [
   { n: 9, key: "loading", title: "Loading & Result", x: 108, cam: [108, 28, 52], target: [108, 2, 0] },
 ];
 
+
+const SECTION_DETAILS = [
+  {
+    pitch: "The weekly forecast is split into five transport-relevant demand streams.",
+    full: "Each demand record combines material, forecast quantity, destination, departure mode and special handling requirements. The coloured lanes show which quantities may be planned together.",
+    input: "Forecast quantities by material and destination",
+    output: "Five planning buckets",
+    decision: "Which demand belongs to the same transport flow?",
+  },
+  {
+    pitch: "Master data is checked before the forecast can enter capacity planning.",
+    full: "The simulation checks dimensions, weight, logistics units, stackability, temperature requirements, route assignment and allowed transport-unit types. Incomplete records are blocked.",
+    input: "Normalized demand records",
+    output: "Released or blocked demand",
+    decision: "Is the information complete enough to plan?",
+  },
+  {
+    pitch: "Forecast quantities are converted into physical logistics units.",
+    full: "The quantity is sequentially decomposed into full pallets, homogeneous layers, cartons and loose packs. This creates the physical building blocks for later loading.",
+    input: "Released forecast quantities",
+    output: "Pallets, layers, cartons and loose packs",
+    decision: "How much physical handling capacity is required?",
+  },
+  {
+    pitch: "Complete homogeneous layers are combined into mixed-layer pallets.",
+    full: "Only compatible complete layers are combined. Destination, departure, transport mode and temperature requirements remain separated.",
+    input: "Complete homogeneous layers",
+    output: "Mixed-layer pallets (MPL)",
+    decision: "Which layers can safely share one pallet?",
+  },
+  {
+    pitch: "Cartons and loose packs are combined into mixed-material pallets.",
+    full: "Remaining cartons and individual packs are arranged on compatible pallets. Cross-destination, cross-mode and cross-temperature combinations remain prohibited.",
+    input: "Cartons and loose packs",
+    output: "Mixed-material pallets (MPM)",
+    decision: "How can the remaining volume be palletized?",
+  },
+  {
+    pitch: "Long materials follow a dedicated handling and loading process.",
+    full: "Materials exceeding the standard pallet footprint are placed on long-goods carriers and routed to suitable transport units.",
+    input: "Overlength forecast demand",
+    output: "Long-goods carriers",
+    decision: "Which dedicated equipment is required?",
+  },
+  {
+    pitch: "Pallets are converted into stable transport-ready stacks.",
+    full: "Stackability, height, weight and special handling rules determine whether pallets can be stacked or must remain single.",
+    input: "Finished pallets and carriers",
+    output: "Transport-ready stacks",
+    decision: "Which units may be stacked without risk?",
+  },
+  {
+    pitch: "The first feasible transport unit is selected for every planning lane.",
+    full: "Candidate transport units are evaluated against mode, temperature, dimensions, floor space and weight. Rejected and selected alternatives are shown as a decision sequence.",
+    input: "Transport-ready stacks",
+    output: "Selected transport-unit type per lane",
+    decision: "Which vehicle can carry the planned load?",
+  },
+  {
+    pitch: "The selected transport units make the forecasted capacity requirement tangible.",
+    full: "The final loading view shows one selected transport unit per lane together with floor, volume and weight utilization.",
+    input: "Selected transport units and stacks",
+    output: "Five planned transport units",
+    decision: "How much transport capacity is required?",
+  },
+];
+
 const DEMANDS = [
   { id: "D-01", lane: "AMB_VIE", material: "M-1001", qty: 1250, valid: true, color: 0x4f8ef7 },
   { id: "D-02", lane: "COOL_VIE", material: "M-2002", qty: 620, valid: true, color: 0x22d3ee },
@@ -334,6 +401,7 @@ export default function ForecastToTransportSimManagement() {
   const [phase, setPhase] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [showResult, setShowResult] = useState(false);
+  const [simulationMode, setSimulationMode] = useState("pitch");
 
   const current = SECTIONS[phase];
 
@@ -470,6 +538,33 @@ export default function ForecastToTransportSimManagement() {
     // Phase 1 — Forecast Input
     {
       const g = phaseGroups[0];
+
+      const inputTitle = makeLabel("FORECAST DEMAND → TRANSPORT PLANNING BUCKETS", {
+        size: 36,
+        color: "#bfe9ff",
+        scale: 0.0082,
+      });
+      inputTitle.position.set(SECTIONS[0].x, 7.0, -16.4);
+      g.add(inputTitle);
+
+      const inputHint = makeLabel("Each card = one material forecast · Each coloured lane = one transport flow", {
+        size: 27,
+        color: "#c6d5e2",
+        scale: 0.0072,
+      });
+      inputHint.position.set(SECTIONS[0].x, 5.9, -16.4);
+      g.add(inputHint);
+
+      LANES.forEach((ln) => {
+        const laneHeader = makeLabel(`PLANNING BUCKET · ${ln.id}`, {
+          size: 25,
+          color: ln.color,
+          scale: 0.0068,
+        });
+        laneHeader.position.set(SECTIONS[0].x - 4.7, 3.7, ln.z);
+        g.add(laneHeader);
+      });
+
       DEMANDS.forEach((d, index) => {
         const ln = lane(d.lane);
         const card = new THREE.Group();
@@ -480,13 +575,26 @@ export default function ForecastToTransportSimManagement() {
         body.position.y = 1.25;
         card.add(body);
         card.add(edge(body, d.valid ? d.color : 0xfbbf24));
-        const txt = makeLabel(`${d.id} · ${d.material} · ${d.qty} u`, {
+        const txt = makeLabel(`${d.material} · FORECAST ${d.qty.toLocaleString()} UNITS`, {
           size: 25,
           color: d.valid ? COLORS.text : "#ffe19a",
           scale: 0.0067,
         });
-        txt.position.set(0, 1.25, 0.13);
+        txt.position.set(0, 1.42, 0.13);
         card.add(txt);
+
+        const status = makeLabel(
+          d.valid ? `${d.id} · ready for planning` : `${d.id} · incomplete master data`,
+          {
+            size: 21,
+            color: d.valid ? "#9af1c9" : "#ffe19a",
+            background: "rgba(0,0,0,0)",
+            scale: 0.0058,
+          }
+        );
+        status.position.set(0, 0.82, 0.13);
+        card.add(status);
+
         addAt(g, card, SECTIONS[0].x + (index === 6 ? 4.2 : 0), 0, ln.z);
       });
     }
@@ -923,6 +1031,36 @@ export default function ForecastToTransportSimManagement() {
         }}
       >
         <div style={{ fontWeight: 700 }}>Forecast-to-Transport Capacity Simulation</div>
+        <div
+          style={{
+            display: "flex",
+            padding: 3,
+            gap: 3,
+            border: `1px solid ${COLORS.border}`,
+            borderRadius: 9,
+            background: "rgba(10,18,28,.86)",
+          }}
+        >
+          {[
+            ["pitch", "Pitch Simulation"],
+            ["full", "Full Simulation"],
+          ].map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setSimulationMode(key)}
+              style={{
+                ...buttonStyle,
+                padding: "5px 9px",
+                border: "none",
+                background: simulationMode === key ? "#0f5470" : "transparent",
+                color: simulationMode === key ? "#e3f7ff" : COLORS.muted,
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <div style={{ color: "#9fd8ff", fontSize: 13 }}>
           Phase {current.n} of 9 · {current.title}
         </div>
@@ -964,6 +1102,22 @@ export default function ForecastToTransportSimManagement() {
           gap: 7,
         }}
       >
+        <div
+          style={{
+            padding: "7px 8px",
+            borderRadius: 8,
+            background: simulationMode === "pitch" ? "rgba(15,84,112,.34)" : "rgba(103,65,145,.28)",
+            border: `1px solid ${COLORS.border}`,
+          }}
+        >
+          <div style={{ fontSize: 10, color: COLORS.muted, textTransform: "uppercase" }}>
+            Active view
+          </div>
+          <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2 }}>
+            {simulationMode === "pitch" ? "Pitch Simulation" : "Full Simulation"}
+          </div>
+        </div>
+
         <button
           type="button"
           style={{ ...buttonStyle, background: playing ? "#3b2630" : "#0f4f67" }}
@@ -1034,8 +1188,10 @@ export default function ForecastToTransportSimManagement() {
           position: "absolute",
           top: 66,
           right: 12,
-          width: 300,
+          width: simulationMode === "full" ? 340 : 310,
           padding: 14,
+          maxHeight: "calc(100vh - 88px)",
+          overflowY: "auto",
         }}
       >
         <div
@@ -1046,49 +1202,168 @@ export default function ForecastToTransportSimManagement() {
             textTransform: "uppercase",
           }}
         >
-          Management storyline
-        </div>
-        <div style={{ fontWeight: 700, fontSize: 16, marginTop: 4 }}>
-          {current.title}
-        </div>
-        <div style={{ color: "#c5d3df", fontSize: 12.5, lineHeight: 1.55, marginTop: 7 }}>
-          {[
-            "Forecast quantities enter five clearly separated planning lanes.",
-            "Incomplete material master data is blocked before capacity planning.",
-            "Demand is converted into pallets, layers, cartons and long-goods carriers.",
-            "Complete homogeneous layers are combined into bucket-specific MPL pallets.",
-            "Cartons and loose goods are built into compatible MPM pallets.",
-            "Long goods follow a dedicated oversized-material flow.",
-            "Pallets are converted into transport-ready stacks.",
-            "Each lane follows a simple candidate sequence until a feasible TU is selected.",
-            "Five final transport units are shown with their loading result and key utilization.",
-          ][phase]}
+          {simulationMode === "pitch" ? "Pitch explanation" : "Full process explanation"}
         </div>
 
-        <div style={{ marginTop: 12, display: "grid", gap: 6 }}>
-          {LANES.map((ln) => (
+        <div style={{ fontWeight: 700, fontSize: 17, marginTop: 4 }}>
+          {String(current.n).padStart(2, "0")} · {current.title}
+        </div>
+
+        <div
+          style={{
+            marginTop: 10,
+            padding: 11,
+            borderRadius: 9,
+            border: `1px solid ${COLORS.border}`,
+            background: "rgba(15,29,42,.82)",
+          }}
+        >
+          <div style={{ color: "#d9edf9", fontSize: 13, lineHeight: 1.55 }}>
+            {simulationMode === "pitch"
+              ? SECTION_DETAILS[phase].pitch
+              : SECTION_DETAILS[phase].full}
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr",
+            gap: 7,
+            marginTop: 10,
+          }}
+        >
+          {[
+            ["Input", SECTION_DETAILS[phase].input],
+            ["What happens", simulationMode === "pitch"
+              ? SECTION_DETAILS[phase].pitch
+              : SECTION_DETAILS[phase].full],
+            ["Output", SECTION_DETAILS[phase].output],
+          ].map(([label, value]) => (
             <div
-              key={ln.key}
+              key={label}
               style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                fontSize: 11.5,
+                padding: "8px 9px",
+                borderRadius: 8,
+                border: `1px solid ${COLORS.border}`,
+                background: "rgba(9,17,26,.66)",
               }}
             >
-              <span
+              <div
                 style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: 2,
-                  background: ln.color,
-                  display: "inline-block",
+                  color: COLORS.muted,
+                  fontSize: 10,
+                  textTransform: "uppercase",
+                  letterSpacing: .8,
                 }}
-              />
-              {ln.id}
+              >
+                {label}
+              </div>
+              <div style={{ marginTop: 3, color: "#d5e1eb", fontSize: 12, lineHeight: 1.45 }}>
+                {value}
+              </div>
             </div>
           ))}
         </div>
+
+        <div
+          style={{
+            marginTop: 10,
+            padding: 10,
+            borderLeft: `3px solid ${COLORS.cyan}`,
+            background: "rgba(20,47,62,.46)",
+            borderRadius: 7,
+          }}
+        >
+          <div style={{ color: COLORS.cyan, fontSize: 10.5, textTransform: "uppercase" }}>
+            Key planning question
+          </div>
+          <div style={{ marginTop: 4, fontWeight: 700, fontSize: 12.5, lineHeight: 1.45 }}>
+            {SECTION_DETAILS[phase].decision}
+          </div>
+        </div>
+
+        {phase === 0 && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ color: "#9fd8ff", fontWeight: 700, fontSize: 12 }}>
+              How to read the Forecast Input
+            </div>
+            <div style={{ marginTop: 7, display: "grid", gap: 7 }}>
+              {[
+                ["Forecast card", "One material and its expected quantity."],
+                ["Coloured lane", "One transport-planning bucket with the same destination, mode and handling requirements."],
+                ["Multiple cards on one lane", "These forecasts may be planned within the same transport flow."],
+                ["Yellow record", "Demand exists, but incomplete master data prevents reliable planning."],
+              ].map(([title, description]) => (
+                <div key={title} style={{ display: "grid", gridTemplateColumns: "94px 1fr", gap: 8 }}>
+                  <div style={{ color: "#dbe9f3", fontWeight: 700, fontSize: 11 }}>{title}</div>
+                  <div style={{ color: COLORS.muted, fontSize: 11, lineHeight: 1.4 }}>{description}</div>
+                </div>
+              ))}
+            </div>
+
+            {simulationMode === "full" && (
+              <div
+                style={{
+                  marginTop: 10,
+                  borderTop: `1px solid ${COLORS.border}`,
+                  paddingTop: 9,
+                  display: "grid",
+                  gap: 5,
+                }}
+              >
+                {DEMANDS.map((d) => (
+                  <div
+                    key={d.id}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 8,
+                      fontSize: 10.8,
+                    }}
+                  >
+                    <span style={{ color: d.valid ? lane(d.lane).color : COLORS.amber }}>
+                      {d.id} · {d.material}
+                    </span>
+                    <span style={{ color: "#dbe7f0" }}>{d.qty.toLocaleString()} units</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {simulationMode === "full" && phase !== 0 && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ color: "#9fd8ff", fontWeight: 700, fontSize: 12 }}>
+              Planning lanes
+            </div>
+            <div style={{ marginTop: 7, display: "grid", gap: 5 }}>
+              {LANES.map((ln) => (
+                <div
+                  key={ln.key}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    fontSize: 11,
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 9,
+                      height: 9,
+                      borderRadius: 2,
+                      background: ln.color,
+                      display: "inline-block",
+                    }}
+                  />
+                  {ln.id}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {showResult && (
