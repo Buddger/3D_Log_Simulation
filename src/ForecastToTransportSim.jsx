@@ -152,8 +152,8 @@ function lane(key) {
 function makeLabel(text, {
   size = 42,
   color = COLORS.text,
-  background = "rgba(7,13,20,.82)",
-  scale = 0.009,
+  background = "rgba(5,10,16,.96)",
+  scale = 0.0102,
 } = {}) {
   const canvas = document.createElement("canvas");
   let ctx = canvas.getContext("2d");
@@ -165,7 +165,10 @@ function makeLabel(text, {
   ctx = canvas.getContext("2d");
   ctx.fillStyle = background;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.font = `600 ${size}px Segoe UI, Arial`;
+  ctx.strokeStyle = "rgba(170,205,230,.34)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+  ctx.font = `700 ${size}px Segoe UI, Arial`;
   ctx.textBaseline = "middle";
   ctx.fillStyle = color;
   ctx.fillText(text, 17, canvas.height / 2);
@@ -179,6 +182,16 @@ function makeLabel(text, {
   }));
   sprite.scale.set(canvas.width * scale, canvas.height * scale, 1);
   return sprite;
+}
+
+
+function makeLaneHeader(text, color) {
+  return makeLabel(text, {
+    size: 34,
+    color,
+    background: "rgba(4,9,15,.97)",
+    scale: 0.0088,
+  });
 }
 
 function edge(mesh, color = 0x0b1220) {
@@ -495,20 +508,18 @@ export default function ForecastToTransportSimManagement() {
       strip.position.set((worldLeft + worldRight) / 2, 0.02, ln.z);
       staticGroup.add(strip);
 
-      const label = makeLabel(ln.id, {
-        size: 32,
-        color: ln.color,
-        scale: 0.008,
+      [worldLeft + 6, -8, 58, 100].forEach((labelX, labelIndex) => {
+        const label = makeLaneHeader(ln.id, ln.color);
+        label.position.set(labelX, labelIndex === 0 ? 1.0 : 0.82, ln.z);
+        staticGroup.add(label);
       });
-      label.position.set(worldLeft + 5, 0.65, ln.z);
-      staticGroup.add(label);
     });
 
     SECTIONS.forEach((s, index) => {
       const marker = makeLabel(`${String(s.n).padStart(2, "0")}  ${s.title.toUpperCase()}`, {
-        size: 34,
-        color: index === 0 ? "#bfe9ff" : "#71879b",
-        scale: 0.0084,
+        size: 40,
+        color: index === 0 ? "#d7f2ff" : "#8fa7bb",
+        scale: 0.0094,
       });
       marker.position.set(s.x, 0.55, 17.5);
       staticGroup.add(marker);
@@ -535,31 +546,40 @@ export default function ForecastToTransportSimManagement() {
       return group;
     });
 
+    // Persistent lane names inside every section for pitch readability
+    phaseGroups.forEach((group, sectionIndex) => {
+      LANES.forEach((ln) => {
+        const laneLabel = makeLaneHeader(ln.id, ln.color);
+        laneLabel.position.set(SECTIONS[sectionIndex].x - 7.2, 1.05, ln.z);
+        group.add(laneLabel);
+      });
+    });
+
     // Phase 1 — Forecast Input
     {
       const g = phaseGroups[0];
 
       const inputTitle = makeLabel("FORECAST DEMAND → TRANSPORT PLANNING BUCKETS", {
-        size: 36,
-        color: "#bfe9ff",
-        scale: 0.0082,
+        size: 42,
+        color: "#e3f7ff",
+        scale: 0.0096,
       });
       inputTitle.position.set(SECTIONS[0].x, 7.0, -16.4);
       g.add(inputTitle);
 
       const inputHint = makeLabel("Each card = one material forecast · Each coloured lane = one transport flow", {
-        size: 27,
-        color: "#c6d5e2",
-        scale: 0.0072,
+        size: 31,
+        color: "#d7e6f2",
+        scale: 0.0082,
       });
       inputHint.position.set(SECTIONS[0].x, 5.9, -16.4);
       g.add(inputHint);
 
       LANES.forEach((ln) => {
         const laneHeader = makeLabel(`PLANNING BUCKET · ${ln.id}`, {
-          size: 25,
+          size: 31,
           color: ln.color,
-          scale: 0.0068,
+          scale: 0.0080,
         });
         laneHeader.position.set(SECTIONS[0].x - 4.7, 3.7, ln.z);
         g.add(laneHeader);
@@ -576,9 +596,9 @@ export default function ForecastToTransportSimManagement() {
         card.add(body);
         card.add(edge(body, d.valid ? d.color : 0xfbbf24));
         const txt = makeLabel(`${d.material} · FORECAST ${d.qty.toLocaleString()} UNITS`, {
-          size: 25,
-          color: d.valid ? COLORS.text : "#ffe19a",
-          scale: 0.0067,
+          size: 29,
+          color: d.valid ? "#f4f9fc" : "#ffe8ad",
+          scale: 0.0075,
         });
         txt.position.set(0, 1.42, 0.13);
         card.add(txt);
@@ -586,10 +606,10 @@ export default function ForecastToTransportSimManagement() {
         const status = makeLabel(
           d.valid ? `${d.id} · ready for planning` : `${d.id} · incomplete master data`,
           {
-            size: 21,
-            color: d.valid ? "#9af1c9" : "#ffe19a",
-            background: "rgba(0,0,0,0)",
-            scale: 0.0058,
+            size: 23,
+            color: d.valid ? "#aaf6d2" : "#ffe8ad",
+            background: "rgba(5,10,16,.88)",
+            scale: 0.0062,
           }
         );
         status.position.set(0, 0.82, 0.13);
@@ -686,7 +706,7 @@ export default function ForecastToTransportSimManagement() {
         const ln = lane(laneKey);
         const p = layerPallet(colors);
         addAt(g, p, SECTIONS[3].x, 0.02, ln.z);
-        const label = makeLabel(title, { size: 28, color: ln.color, scale: 0.007 });
+        const label = makeLabel(title, { size: 31, color: ln.color, scale: 0.0080 });
         label.position.set(SECTIONS[3].x, 3.0, ln.z + 1.5);
         g.add(label);
       });
@@ -703,7 +723,7 @@ export default function ForecastToTransportSimManagement() {
         const ln = lane(laneKey);
         const p = mixedPallet(colors);
         addAt(g, p, SECTIONS[4].x, 0.02, ln.z);
-        const label = makeLabel(title, { size: 28, color: ln.color, scale: 0.007 });
+        const label = makeLabel(title, { size: 31, color: ln.color, scale: 0.0080 });
         label.position.set(SECTIONS[4].x, 3.0, ln.z + 1.5);
         g.add(label);
       });
@@ -727,9 +747,9 @@ export default function ForecastToTransportSimManagement() {
       });
 
       const label = makeLabel("Dedicated long-goods carrier", {
-        size: 30,
+        size: 34,
         color: COLORS.amber,
-        scale: 0.0076,
+        scale: 0.0085,
       });
       label.position.set(SECTIONS[5].x, 3.2, ln.z);
       g.add(label);
@@ -757,9 +777,9 @@ export default function ForecastToTransportSimManagement() {
         addAt(g, stack, SECTIONS[6].x, 0, ln.z);
 
         const label = makeLabel(title, {
-          size: 28,
+          size: 31,
           color: double ? COLORS.green : COLORS.amber,
-          scale: 0.007,
+          scale: 0.0080,
         });
         label.position.set(SECTIONS[6].x, double ? 4.0 : 2.9, ln.z + 1.6);
         g.add(label);
@@ -797,9 +817,9 @@ export default function ForecastToTransportSimManagement() {
         g.add(arrow);
 
         const reason = makeLabel(decision.reason, {
-          size: 23,
-          color: "#b7c8d8",
-          scale: 0.0063,
+          size: 26,
+          color: "#d2e0eb",
+          scale: 0.0070,
         });
         reason.position.set(x + 4.0, 2.8, ln.z);
         g.add(reason);
@@ -835,7 +855,7 @@ export default function ForecastToTransportSimManagement() {
 
         const label = makeLabel(
           `${tu.id} · ${tu.type} · ${tu.floor}% floor`,
-          { size: 27, color: COLORS.green, scale: 0.0069 }
+          { size: 31, color: "#aaf6d2", scale: 0.0078 }
         );
         label.position.set(SECTIONS[8].x, 4.0, ln.z);
         g.add(label);
@@ -1188,7 +1208,7 @@ export default function ForecastToTransportSimManagement() {
           position: "absolute",
           top: 66,
           right: 12,
-          width: simulationMode === "full" ? 340 : 310,
+          width: simulationMode === "full" ? 360 : 330,
           padding: 14,
           maxHeight: "calc(100vh - 88px)",
           overflowY: "auto",
@@ -1205,7 +1225,7 @@ export default function ForecastToTransportSimManagement() {
           {simulationMode === "pitch" ? "Pitch explanation" : "Full process explanation"}
         </div>
 
-        <div style={{ fontWeight: 700, fontSize: 17, marginTop: 4 }}>
+        <div style={{ fontWeight: 700, fontSize: 18, marginTop: 4 }}>
           {String(current.n).padStart(2, "0")} · {current.title}
         </div>
 
@@ -1218,7 +1238,7 @@ export default function ForecastToTransportSimManagement() {
             background: "rgba(15,29,42,.82)",
           }}
         >
-          <div style={{ color: "#d9edf9", fontSize: 13, lineHeight: 1.55 }}>
+          <div style={{ color: "#d9edf9", fontSize: 13.5, lineHeight: 1.6 }}>
             {simulationMode === "pitch"
               ? SECTION_DETAILS[phase].pitch
               : SECTION_DETAILS[phase].full}
@@ -1282,6 +1302,48 @@ export default function ForecastToTransportSimManagement() {
             {SECTION_DETAILS[phase].decision}
           </div>
         </div>
+
+        {simulationMode === "pitch" && (
+          <div
+            style={{
+              marginTop: 11,
+              padding: 10,
+              borderRadius: 8,
+              border: `1px solid ${COLORS.border}`,
+              background: "rgba(8,16,25,.72)",
+            }}
+          >
+            <div style={{ color: "#9fd8ff", fontWeight: 700, fontSize: 11.5 }}>
+              Lane meaning
+            </div>
+            <div style={{ marginTop: 6, display: "grid", gap: 5 }}>
+              {LANES.map((ln) => (
+                <div
+                  key={ln.key}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 7,
+                    fontSize: 11.5,
+                    color: "#d9e6f0",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: 2,
+                      background: ln.color,
+                      display: "inline-block",
+                      flex: "0 0 auto",
+                    }}
+                  />
+                  {ln.id}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {phase === 0 && (
           <div style={{ marginTop: 12 }}>
