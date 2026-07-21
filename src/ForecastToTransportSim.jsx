@@ -133,13 +133,13 @@ const PHASE_HEADLINES = [
 
 
 const DEMANDS = [
-  { id: "D-01", lane: "AMB_VIE", material: "M-1001", qty: 1250, valid: true, color: 0x4f8ef7 },
-  { id: "D-02", lane: "COOL_VIE", material: "M-2002", qty: 620, valid: true, color: 0x22d3ee },
-  { id: "D-03", lane: "AIR_PAR", material: "M-3003", qty: 340, valid: true, color: 0xc084fc },
-  { id: "D-04", lane: "AMB_ZRH", material: "M-4004", qty: 900, valid: true, color: 0xef4444 },
-  { id: "D-05", lane: "AMB_ZRH", material: "M-5005", qty: 260, valid: true, color: 0x34d399 },
-  { id: "D-06", lane: "LONG_PAR", material: "M-6006", qty: 180, valid: true, color: 0xf59e0b },
-  { id: "D-07", lane: "AMB_VIE", material: "M-7007", qty: 95, valid: false, color: 0x94a3b8 },
+  { id: "D-01", lane: "AMB_VIE", material: "M-1001", name: "Standard Cartoned Goods", qty: 1250, valid: true, color: 0x4f8ef7 },
+  { id: "D-02", lane: "COOL_VIE", material: "M-2002", name: "Pharma Coolpacks", qty: 620, valid: true, color: 0x22d3ee },
+  { id: "D-03", lane: "AIR_PAR", material: "M-3003", name: "Precision Sensors", qty: 340, valid: true, color: 0xc084fc },
+  { id: "D-04", lane: "AMB_ZRH", material: "M-4004", name: "Steel Fittings", qty: 900, valid: true, color: 0xef4444 },
+  { id: "D-05", lane: "AMB_ZRH", material: "M-5005", name: "Panel Elements", qty: 260, valid: true, color: 0x34d399 },
+  { id: "D-06", lane: "LONG_PAR", material: "M-6006", name: "Aluminium Profiles 4.2 m", qty: 180, valid: true, color: 0xf59e0b },
+  { id: "D-07", lane: "AMB_VIE", material: "M-7007", name: "Spare Kits", qty: 95, valid: false, color: 0x94a3b8 },
 ];
 
 const TU_DECISIONS = [
@@ -188,11 +188,14 @@ function makeLabel(text, {
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.minFilter = THREE.LinearFilter;
-  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+  const spriteMaterial = new THREE.SpriteMaterial({
     map: texture,
     transparent: true,
     depthWrite: false,
-  }));
+    depthTest: false,
+  });
+  const sprite = new THREE.Sprite(spriteMaterial);
+  sprite.renderOrder = 999;
   sprite.scale.set(canvas.width * scale, canvas.height * scale, 1);
   return sprite;
 }
@@ -401,7 +404,7 @@ function addAt(group, object, x, y, z) {
 
 function phaseOpacity(sectionIndex, activePhase) {
   if (sectionIndex === activePhase) return 1;
-  if (sectionIndex < activePhase) return 0.16;
+  if (sectionIndex < activePhase) return 0.12;
   return 0.03;
 }
 
@@ -571,7 +574,7 @@ export default function ForecastToTransportSimManagement() {
       return group;
     });
 
-    // Persistent lane names inside every section for pitch readability
+    // Phase headlines for pitch readability
     phaseGroups.forEach((group, sectionIndex) => {
       const sectionHeadline = makeLabel(PHASE_HEADLINES[sectionIndex], {
         size: 38,
@@ -581,13 +584,6 @@ export default function ForecastToTransportSimManagement() {
       });
       sectionHeadline.position.set(SECTIONS[sectionIndex].x, 7.9, -16.4);
       group.add(sectionHeadline);
-
-      LANES.forEach((ln) => {
-        const laneLabel = makeLaneHeader(ln.id, ln.color);
-        laneLabel.position.set(SECTIONS[sectionIndex].x - 7.2, 1.05, ln.z);
-        laneLabel.userData.pitchOnly = true;
-        group.add(laneLabel);
-      });
     });
 
     // Phase 1 — Forecast Input
@@ -630,7 +626,7 @@ export default function ForecastToTransportSimManagement() {
         body.position.y = 1.25;
         card.add(body);
         card.add(edge(body, d.valid ? d.color : 0xfbbf24));
-        const txt = makeLabel(`${d.material} · FORECAST ${d.qty.toLocaleString()} UNITS`, {
+        const txt = makeLabel(`${d.name.toUpperCase()} · ${d.qty.toLocaleString()} FORECAST UNITS`, {
           size: 29,
           color: d.valid ? "#f4f9fc" : "#ffe8ad",
           scale: 0.0075,
@@ -675,12 +671,12 @@ export default function ForecastToTransportSimManagement() {
         gate.add(top);
         addAt(g, gate, SECTIONS[1].x, 0, ln.z);
 
-        const ok = decisionCard("Validated", true);
+        const ok = decisionCard("Ready for planning", true);
         ok.scale.set(0.62, 0.62, 0.62);
         addAt(g, ok, SECTIONS[1].x + 4.8, 0, ln.z);
       });
 
-      const blocked = decisionCard("D-07 blocked", false);
+      const blocked = decisionCard("Blocked by missing data", false);
       blocked.scale.set(0.7, 0.7, 0.7);
       addAt(g, blocked, SECTIONS[1].x + 4.8, 0, -16.2);
     }
@@ -1448,7 +1444,7 @@ export default function ForecastToTransportSimManagement() {
             </div>
             <div style={{ marginTop: 7, display: "grid", gap: 7 }}>
               {[
-                ["Forecast card", "One material and its expected quantity."],
+                ["Forecast card", "One forecasted material group and its expected quantity."],
                 ["Coloured lane", "One transport-planning bucket with the same destination, mode and handling requirements."],
                 ["Multiple cards on one lane", "These forecasts may be planned within the same transport flow."],
                 ["Yellow record", "Demand exists, but incomplete master data prevents reliable planning."],
@@ -1481,7 +1477,7 @@ export default function ForecastToTransportSimManagement() {
                     }}
                   >
                     <span style={{ color: d.valid ? lane(d.lane).color : COLORS.amber }}>
-                      {d.id} · {d.material}
+                      {d.id} · {d.name}
                     </span>
                     <span style={{ color: "#dbe7f0" }}>{d.qty.toLocaleString()} units</span>
                   </div>
