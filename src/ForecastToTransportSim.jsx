@@ -119,6 +119,19 @@ const SECTION_DETAILS = [
   },
 ];
 
+const PHASE_HEADLINES = [
+  "7 forecast records → 5 planning lanes",
+  "1 record blocked before planning",
+  "Forecast becomes physical logistics units",
+  "Compatible layers become MPL pallets",
+  "Remaining cartons become MPM pallets",
+  "Long goods require a dedicated flow",
+  "Pallets become transport-ready stacks",
+  "Rejected → selected transport unit",
+  "Forecast converted into 5 transport units",
+];
+
+
 const DEMANDS = [
   { id: "D-01", lane: "AMB_VIE", material: "M-1001", qty: 1250, valid: true, color: 0x4f8ef7 },
   { id: "D-02", lane: "COOL_VIE", material: "M-2002", qty: 620, valid: true, color: 0x22d3ee },
@@ -388,8 +401,8 @@ function addAt(group, object, x, y, z) {
 
 function phaseOpacity(sectionIndex, activePhase) {
   if (sectionIndex === activePhase) return 1;
-  if (sectionIndex < activePhase) return 0.28;
-  return 0.08;
+  if (sectionIndex < activePhase) return 0.16;
+  return 0.03;
 }
 
 function setGroupOpacity(root, opacity) {
@@ -404,6 +417,15 @@ function setGroupOpacity(root, opacity) {
         material.opacity = Math.min(base, opacity);
       }
     });
+  });
+}
+
+
+function updateSceneMode(scene, mode) {
+  if (!scene) return;
+  scene.traverse((object) => {
+    if (object.userData?.pitchOnly) object.visible = mode === "pitch";
+    if (object.userData?.fullOnly) object.visible = mode === "full";
   });
 }
 
@@ -439,17 +461,23 @@ export default function ForecastToTransportSimManagement() {
   }, [phase]);
 
   useEffect(() => {
+    const world = threeRef.current;
+    if (!world) return;
+    updateSceneMode(world.scene, simulationMode);
+  }, [simulationMode]);
+
+  useEffect(() => {
     if (!playing) return undefined;
     const id = window.setInterval(() => {
       setPhase((p) => {
         if (p >= SECTIONS.length - 1) {
           setPlaying(false);
-          setShowResult(true);
+          window.setTimeout(() => setShowResult(true), 2000);
           return p;
         }
         return p + 1;
       });
-    }, 6500);
+    }, 7200);
     return () => window.clearInterval(id);
   }, [playing]);
 
@@ -507,12 +535,9 @@ export default function ForecastToTransportSimManagement() {
       strip.rotation.x = -Math.PI / 2;
       strip.position.set((worldLeft + worldRight) / 2, 0.02, ln.z);
       staticGroup.add(strip);
-
-      [worldLeft + 6, -8, 58, 100].forEach((labelX, labelIndex) => {
-        const label = makeLaneHeader(ln.id, ln.color);
-        label.position.set(labelX, labelIndex === 0 ? 1.0 : 0.82, ln.z);
-        staticGroup.add(label);
-      });
+      const label = makeLaneHeader(ln.id, ln.color);
+      label.position.set(worldLeft + 6, 1.0, ln.z);
+      staticGroup.add(label);
     });
 
     SECTIONS.forEach((s, index) => {
@@ -548,9 +573,19 @@ export default function ForecastToTransportSimManagement() {
 
     // Persistent lane names inside every section for pitch readability
     phaseGroups.forEach((group, sectionIndex) => {
+      const sectionHeadline = makeLabel(PHASE_HEADLINES[sectionIndex], {
+        size: 38,
+        color: "#eef8ff",
+        background: "rgba(5,10,16,.97)",
+        scale: 0.0092,
+      });
+      sectionHeadline.position.set(SECTIONS[sectionIndex].x, 7.9, -16.4);
+      group.add(sectionHeadline);
+
       LANES.forEach((ln) => {
         const laneLabel = makeLaneHeader(ln.id, ln.color);
         laneLabel.position.set(SECTIONS[sectionIndex].x - 7.2, 1.05, ln.z);
+        laneLabel.userData.pitchOnly = true;
         group.add(laneLabel);
       });
     });
@@ -708,6 +743,8 @@ export default function ForecastToTransportSimManagement() {
         addAt(g, p, SECTIONS[3].x, 0.02, ln.z);
         const label = makeLabel(title, { size: 31, color: ln.color, scale: 0.0080 });
         label.position.set(SECTIONS[3].x, 3.0, ln.z + 1.5);
+        label.userData.fullOnly = true;
+        label.userData.fullOnly = true;
         g.add(label);
       });
     }
@@ -725,6 +762,7 @@ export default function ForecastToTransportSimManagement() {
         addAt(g, p, SECTIONS[4].x, 0.02, ln.z);
         const label = makeLabel(title, { size: 31, color: ln.color, scale: 0.0080 });
         label.position.set(SECTIONS[4].x, 3.0, ln.z + 1.5);
+        label.userData.fullOnly = true;
         g.add(label);
       });
     }
@@ -752,6 +790,7 @@ export default function ForecastToTransportSimManagement() {
         scale: 0.0085,
       });
       label.position.set(SECTIONS[5].x, 3.2, ln.z);
+      label.userData.fullOnly = true;
       g.add(label);
     }
 
@@ -782,6 +821,7 @@ export default function ForecastToTransportSimManagement() {
           scale: 0.0080,
         });
         label.position.set(SECTIONS[6].x, double ? 4.0 : 2.9, ln.z + 1.6);
+        label.userData.fullOnly = true;
         g.add(label);
       });
 
@@ -807,11 +847,38 @@ export default function ForecastToTransportSimManagement() {
         selected.scale.set(0.72, 0.72, 0.72);
         addAt(g, selected, x + 4.0, 0, ln.z);
 
-        const arrow = makeLabel("→", {
-          size: 42,
-          color: COLORS.muted,
-          background: "rgba(0,0,0,0)",
-          scale: 0.007,
+        const chain = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(x - 1.7, 0.08, ln.z),
+            new THREE.Vector3(x + 1.7, 0.08, ln.z),
+          ]),
+          new THREE.LineBasicMaterial({ color: 0x88a3b8 })
+        );
+        g.add(chain);
+
+        const step1 = makeLabel("1", {
+          size: 24,
+          color: "#ffcccc",
+          background: "rgba(5,10,16,.95)",
+          scale: 0.0058,
+        });
+        step1.position.set(x - 4.0, 3.05, ln.z);
+        g.add(step1);
+
+        const step2 = makeLabel("2", {
+          size: 24,
+          color: "#c9ffe3",
+          background: "rgba(5,10,16,.95)",
+          scale: 0.0058,
+        });
+        step2.position.set(x + 4.0, 3.05, ln.z);
+        g.add(step2);
+
+        const arrow = makeLabel("REJECTED  →  SELECTED", {
+          size: 25,
+          color: "#d7e6f2",
+          background: "rgba(5,10,16,.95)",
+          scale: 0.0064,
         });
         arrow.position.set(x, 1.15, ln.z);
         g.add(arrow);
@@ -822,6 +889,7 @@ export default function ForecastToTransportSimManagement() {
           scale: 0.0070,
         });
         reason.position.set(x + 4.0, 2.8, ln.z);
+        reason.userData.fullOnly = true;
         g.add(reason);
       });
     }
@@ -829,6 +897,15 @@ export default function ForecastToTransportSimManagement() {
     // Phase 9 — One final truck per lane; comparison moved to UI
     {
       const g = phaseGroups[8];
+      const resultHeadline = makeLabel("FORECAST CONVERTED INTO 5 TRANSPORT UNITS", {
+        size: 42,
+        color: "#e5fbff",
+        background: "rgba(5,10,16,.97)",
+        scale: 0.0096,
+      });
+      resultHeadline.position.set(SECTIONS[8].x, 8.0, -16.4);
+      g.add(resultHeadline);
+
       FINAL_TUS.forEach((tu) => {
         const ln = lane(tu.lane);
         const t = truck(tu.kind);
@@ -876,7 +953,7 @@ export default function ForecastToTransportSimManagement() {
       const offset = pos.clone().sub(tgt);
       cameraState.animation = {
         time: 0,
-        duration: 1.25,
+        duration: 1.8,
         fromTarget: cameraState.target.clone(),
         toTarget: tgt,
         fromDistance: cameraState.distance,
@@ -1084,13 +1161,14 @@ export default function ForecastToTransportSimManagement() {
         <div style={{ color: "#9fd8ff", fontSize: 13 }}>
           Phase {current.n} of 9 · {current.title}
         </div>
-        <div style={{ display: "flex", gap: 5 }}>
+        <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
           {SECTIONS.map((s, index) => (
             <button
               key={s.key}
               type="button"
               onClick={() => {
                 setPlaying(false);
+                setShowResult(false);
                 setPhase(index);
               }}
               title={s.title}
@@ -1107,6 +1185,24 @@ export default function ForecastToTransportSimManagement() {
               {s.n}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => {
+              setPlaying(false);
+              setShowResult(true);
+            }}
+            title="Summary"
+            style={{
+              ...buttonStyle,
+              padding: "0 9px",
+              height: 27,
+              borderRadius: 14,
+              background: showResult ? "#15563f" : "#101923",
+              color: showResult ? "#d7ffec" : COLORS.muted,
+            }}
+          >
+            Summary
+          </button>
         </div>
       </div>
 
@@ -1433,7 +1529,7 @@ export default function ForecastToTransportSimManagement() {
           style={{
             position: "absolute",
             inset: 0,
-            background: "rgba(3,7,12,.76)",
+            background: "rgba(3,7,12,.80)",
             display: "grid",
             placeItems: "center",
             padding: 18,
@@ -1442,7 +1538,7 @@ export default function ForecastToTransportSimManagement() {
           <div
             style={{
               ...panelStyle,
-              width: "min(900px, 95vw)",
+              width: "min(920px, 95vw)",
               maxHeight: "92vh",
               overflowY: "auto",
               padding: 20,
@@ -1451,10 +1547,10 @@ export default function ForecastToTransportSimManagement() {
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
               <div>
                 <div style={{ color: "#58cfff", fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>
-                  Management result
+                  Summary page
                 </div>
-                <div style={{ fontWeight: 700, fontSize: 20, marginTop: 3 }}>
-                  Forecast converted into five transport units
+                <div style={{ fontWeight: 700, fontSize: 21, marginTop: 3 }}>
+                  Outcome, key decisions and rejections
                 </div>
               </div>
               <button type="button" style={buttonStyle} onClick={() => setShowResult(false)}>
@@ -1464,17 +1560,35 @@ export default function ForecastToTransportSimManagement() {
 
             <div
               style={{
+                marginTop: 16,
+                padding: 14,
+                borderRadius: 10,
+                border: `1px solid ${COLORS.border}`,
+                background: "rgba(13,26,37,.88)",
+              }}
+            >
+              <div style={{ fontWeight: 700, fontSize: 18 }}>
+                Forecast converted into <span style={{ color: COLORS.cyan }}>5 transport units</span>
+              </div>
+              <div style={{ marginTop: 7, color: "#c8d6e2", fontSize: 13, lineHeight: 1.6 }}>
+                The simulation shows how forecasted demand is transformed into transport-ready logistics units,
+                which constraints keep flows separated, and which transport unit is selected per lane.
+              </div>
+            </div>
+
+            <div
+              style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
                 gap: 10,
-                marginTop: 16,
+                marginTop: 14,
               }}
             >
               {[
                 ["Planned transport units", "5"],
+                ["Blocked forecast records", "1 (D-07)"],
                 ["Main separation drivers", "Temperature · Air · Long goods"],
-                ["Blocked forecast quantity", "95 units"],
-                ["Recommended storyline", "Capacity becomes tangible"],
+                ["Key pitch takeaway", "Forecast becomes visible and tangible"],
               ].map(([label, value]) => (
                 <div
                   key={label}
@@ -1486,7 +1600,7 @@ export default function ForecastToTransportSimManagement() {
                   }}
                 >
                   <div style={{ color: COLORS.muted, fontSize: 11 }}>{label}</div>
-                  <div style={{ marginTop: 5, fontWeight: 700, fontSize: 17 }}>{value}</div>
+                  <div style={{ marginTop: 5, fontWeight: 700, fontSize: 16 }}>{value}</div>
                 </div>
               ))}
             </div>
@@ -1494,41 +1608,114 @@ export default function ForecastToTransportSimManagement() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-                gap: 10,
-                marginTop: 14,
+                gridTemplateColumns: "1.2fr 1fr",
+                gap: 12,
+                marginTop: 16,
               }}
             >
-              {FINAL_TUS.map((tu) => {
-                const ln = lane(tu.lane);
-                return (
-                  <div
-                    key={tu.id}
-                    style={{
-                      border: `1px solid ${COLORS.border}`,
-                      borderLeft: `4px solid ${ln.color}`,
-                      borderRadius: 10,
-                      padding: 12,
-                      background: "#101a25",
-                    }}
-                  >
-                    <div style={{ fontWeight: 700 }}>{tu.id} · {tu.type}</div>
-                    <div style={{ marginTop: 4, color: ln.color, fontSize: 11.5 }}>{ln.id}</div>
-                    <div style={{ marginTop: 8, fontSize: 12.5, lineHeight: 1.7, color: "#c5d3df" }}>
-                      Floor utilization: {tu.floor}%<br />
-                      Volume utilization: {tu.volume}%<br />
-                      Weight utilization: {tu.weight}%
+              <div
+                style={{
+                  border: `1px solid ${COLORS.border}`,
+                  borderRadius: 10,
+                  padding: 14,
+                  background: "#101a25",
+                }}
+              >
+                <div style={{ fontWeight: 700, color: COLORS.cyan, marginBottom: 10 }}>
+                  Final planning decisions
+                </div>
+                <div style={{ display: "grid", gap: 8 }}>
+                  {TU_DECISIONS.map((d) => (
+                    <div
+                      key={d.lane}
+                      style={{
+                        borderLeft: `4px solid ${lane(d.lane).color}`,
+                        background: "rgba(14,24,34,.92)",
+                        borderRadius: 8,
+                        padding: "8px 10px",
+                      }}
+                    >
+                      <div style={{ fontWeight: 700, fontSize: 12.5, color: lane(d.lane).color }}>
+                        {lane(d.lane).id}
+                      </div>
+                      <div style={{ marginTop: 4, fontSize: 12.5, color: "#d7e3ed", lineHeight: 1.55 }}>
+                        Selected: <b style={{ color: "#aef5d1" }}>{d.selected}</b><br />
+                        Reason: {d.reason}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  ))}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  border: `1px solid ${COLORS.border}`,
+                  borderRadius: 10,
+                  padding: 14,
+                  background: "#101a25",
+                }}
+              >
+                <div style={{ fontWeight: 700, color: COLORS.amber, marginBottom: 10 }}>
+                  Main rejections / exceptions
+                </div>
+                <div style={{ display: "grid", gap: 8 }}>
+                  {[
+                    "D-07 blocked because required master data is incomplete.",
+                    "Small Box Truck rejected for Vienna ambient because capacity is insufficient.",
+                    "Road Trailer rejected for Paris air because air mode is mandatory.",
+                    "Standard Trailer rejected for Paris long goods because material length exceeds the standard setup.",
+                  ].map((item) => (
+                    <div
+                      key={item}
+                      style={{
+                        background: "rgba(14,24,34,.92)",
+                        borderRadius: 8,
+                        padding: "8px 10px",
+                        color: "#d7e3ed",
+                        fontSize: 12.5,
+                        lineHeight: 1.55,
+                      }}
+                    >
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div style={{ marginTop: 16 }}>
-              <div style={{ fontWeight: 700, color: COLORS.cyan }}>Pitch message</div>
-              <ul style={{ margin: "8px 0 0 18px", padding: 0, lineHeight: 1.7, color: "#c8d6e2" }}>
-                {managementInsights.map((item) => <li key={item}>{item}</li>)}
-              </ul>
+              <div style={{ fontWeight: 700, color: COLORS.green, marginBottom: 8 }}>
+                Planned transport units at a glance
+              </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                  gap: 10,
+                }}
+              >
+                {FINAL_TUS.map((tu) => {
+                  const ln = lane(tu.lane);
+                  return (
+                    <div
+                      key={tu.id}
+                      style={{
+                        border: `1px solid ${COLORS.border}`,
+                        borderLeft: `4px solid ${ln.color}`,
+                        borderRadius: 10,
+                        padding: 12,
+                        background: "#0f1822",
+                      }}
+                    >
+                      <div style={{ fontWeight: 700 }}>{tu.id} · {tu.type}</div>
+                      <div style={{ marginTop: 4, color: ln.color, fontSize: 11.5 }}>{ln.id}</div>
+                      <div style={{ marginTop: 6, color: "#c9d6e1", fontSize: 12.5, lineHeight: 1.6 }}>
+                        Floor: {tu.floor}% · Volume: {tu.volume}% · Weight: {tu.weight}%
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
